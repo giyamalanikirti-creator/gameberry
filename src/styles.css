@@ -499,7 +499,8 @@ h1, h2, h3, p { margin: 0; }
 .lin-top { grid-template-columns: 1fr auto 1fr; }
 .lin-who { justify-self: end; display: inline-flex; align-items: center; gap: 8px; font-weight: 800; padding: 4px 12px 4px 4px; border-radius: 999px; border: 1px solid var(--line); }
 .lin-stage { padding: 72px 16px 32px; display: flex; gap: 24px; justify-content: center; align-items: flex-start; }
-.lin-stage .phone { position: relative; }
+.lin-stage .phone { position: relative; top: 0; height: min(844px, calc(100vh - 96px)); height: min(844px, calc(100dvh - 96px)); min-height: 480px; }
+.lin-stage .phone-body { overflow-y: auto; }
 .lin-panel { width: 380px; display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 18px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.04); position: sticky; top: 72px; }
 .lin-progress { height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
 .lin-progress span { display: block; height: 100%; background: var(--gold); transition: width 300ms; }
@@ -514,12 +515,13 @@ h1, h2, h3, p { margin: 0; }
 .lin .screen { padding-bottom: 24px; }
 @media (max-width: 899px) {
   .lin-stage { flex-direction: column; align-items: center; padding-top: 64px; }
+  .lin-stage .phone { height: min(844px, calc(100vh - 80px)); height: min(844px, calc(100dvh - 80px)); }
   .lin-panel { position: static; width: min(390px, 100%); }
   .lin-who { font-size: 13px; }
 }
 @media (max-width: 440px) {
   .lin-stage { padding: 56px 0 24px; gap: 12px; }
-  .lin-stage .phone { height: auto; min-height: 640px; }
+  .lin-stage .phone { width: 100%; height: calc(100vh - 56px); height: calc(100dvh - 56px); min-height: 480px; }
   .lin-panel { border-radius: 0; border-left: 0; border-right: 0; }
   .lin-panel .btn-big { display: none; }
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { applyGuided, round2Slot } from '../demo/guided';
 import { formatClock, formatSlot, formatTime } from '../domain/time';
 import type { PlayerId, State } from '../domain/types';
@@ -56,7 +56,10 @@ function Screen({ step, s, clock, onCta }: { step: Step; s: State; clock: number
   const me = step.who;
   const r = latestRound(s);
   const reduced = useReducedMotion();
-  const cta = <button type="button" className="btn btn-ember btn-big lin-cta" onClick={onCta} autoFocus>{step.cta}</button>;
+  const ctaRef = useRef<HTMLButtonElement>(null);
+  // Focus the step's button for keyboard users without scrolling the page.
+  useEffect(() => { ctaRef.current?.focus({ preventScroll: true }); }, [step]);
+  const cta = <button ref={ctaRef} type="button" className="btn btn-ember btn-big lin-cta" onClick={onCta}>{step.cta}</button>;
 
   switch (step.screen) {
     case 'home':
