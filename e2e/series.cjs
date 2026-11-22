@@ -2,9 +2,7 @@
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
 
-const address = new URL(process.env.BASE_URL || 'http://127.0.0.1:5173');
-address.searchParams.set('series', '1');
-const url = address.href;
+const url = process.env.BASE_URL || 'http://127.0.0.1:5173';
 const executablePath = process.env.CHROMIUM_PATH;
 const viewport = { width: 360, height: 800 };
 

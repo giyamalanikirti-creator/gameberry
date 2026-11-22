@@ -1,6 +1,6 @@
-# Badla Ludo prototypes
+# Badla Doubles and Grudge Night
 
-Badla Rivals is a playable singles rivalry demo with Riya and Gunjan. The repository also includes the earlier Doubles and Grudge Night walkthrough. Player profiles, matches, invitations, reminders and analytics are simulated on one device.
+A mobile-first, single-device Ludo prototype. Start from a settled singles result, play a first-to-two Badla series, and book a club decider if the same four players share a club. Every role is fictional. Invitations, reminders, club cards, predictions, product events and gold live on the current device.
 
 ## Run the prototype
 
@@ -15,25 +15,7 @@ npm run build
 npm run preview
 ```
 
-The default route opens Badla Rivals. Use **Demo controls → Doubles & Grudge Night** or open `?series=1` for the team demo. The original Kirti and Ahmed flow lives at `?classic=1`. Each mode has its own versioned local storage.
-
-## Badla Rivals walkthrough
-
-1. The lobby opens as **Riya**. Open her player card for her profile, then select **Play 1v1**. Roll and move token 4.
-2. Select **Demo controls → View as Gunjan** in the phone's top-right corner. Roll and move Gunjan's token 4. The Kaat replay records the 41-square capture from the move the board just played.
-3. Switch back to Riya. **Finish remaining demo turns** plays the rest of the guided opening through legal moves. Open the result and select **Ask for Badla**.
-4. Switch to Gunjan. Select **Kal Milte Hain**, then switch back to Riya and choose **Confirm appointment**. Either can suggest a different two-hour window before check-in.
-5. Use **Demo controls → Skip to tomorrow**. Open the simulated notification as Riya, then tap **I’m ready**. Switch to Gunjan and check in independently.
-6. Back as Riya, roll 2 and move token 4 home. Open the 1–1 result, choose a preset sticker, and inspect the rivalry ledger or invite Gunjan to a decider.
-7. Open **Rivals → Shruti** to try the weekly Derby and board theme on a seeded Nemesis account.
-
-The PM panel shows the event log, each player's active days, the illustrative funnel and the DAU calculator. Opening an agreed window on a new local day records the incremental visit. The base model displays +10.2% and +153K DAU. The low and high presets display +5.1% and +16.9%.
-
-**Demo controls** also offers reduced motion, sound and optional Gunjan auto-play. Turn off **Demo dice and starting positions** before starting a table to play all four tokens from the yards with a fresh dice sequence. The guided match positions and roll sequence make the capture and rematch reproducible. The demo clock advances through explicit controls.
-
-Run `npm run e2e:rivals` against a running Vite server with Playwright and Chromium installed. The test runs the Riya and Gunjan handoff at 360 px and checks the side panel and Derby at 1280 px. Set `BASE_URL` or `CHROMIUM_PATH` for an alternate server or browser installation.
-
-## Doubles and Grudge Night
+The default route opens the series demo. **Demo controls → Open original singles demo** opens the earlier two-player flow, also available at `?classic=1`. Each demo uses a separate versioned local-storage key, so an existing singles session remains accessible. Use one browser tab per walkthrough.
 
 ## The guided two-day story
 
