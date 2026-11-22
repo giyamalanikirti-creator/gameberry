@@ -494,3 +494,32 @@ h1, h2, h3, p { margin: 0; }
 .cast li { display: flex; gap: 10px; align-items: center; }
 .cast span { display: flex; flex-direction: column; }
 .cast small { color: var(--ink-2); }
+
+/* ================= Linear demo ================= */
+.lin-top { grid-template-columns: 1fr auto 1fr; }
+.lin-who { justify-self: end; display: inline-flex; align-items: center; gap: 8px; font-weight: 800; padding: 4px 12px 4px 4px; border-radius: 999px; border: 1px solid var(--line); }
+.lin-stage { padding: 72px 16px 32px; display: flex; gap: 24px; justify-content: center; align-items: flex-start; }
+.lin-stage .phone { position: relative; }
+.lin-panel { width: 380px; display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 18px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.04); position: sticky; top: 72px; }
+.lin-progress { height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
+.lin-progress span { display: block; height: 100%; background: var(--gold); transition: width 300ms; }
+.lin-what { font-size: 18px; font-weight: 800; line-height: 1.35; }
+.lin-cta { width: 100%; margin-top: 4px; animation: storyPulse 1.4s ease-in-out infinite; }
+.lin-score { display: flex; align-items: center; gap: 6px; font-weight: 800; }
+.lin-score strong { color: var(--ember); font-size: 22px; }
+.lin-lock { position: static; min-height: 100%; }
+.sent-home { text-align: center; font-size: 22px; font-weight: 900; color: var(--ember); }
+.banner-static { display: flex; flex-direction: column; background: var(--cream); color: var(--indigo-1); border-radius: 14px; padding: 10px 12px; }
+.banner-static span { font-size: 13px; }
+.lin .screen { padding-bottom: 24px; }
+@media (max-width: 899px) {
+  .lin-stage { flex-direction: column; align-items: center; padding-top: 64px; }
+  .lin-panel { position: static; width: min(390px, 100%); }
+  .lin-who { font-size: 13px; }
+}
+@media (max-width: 440px) {
+  .lin-stage { padding: 56px 0 24px; gap: 12px; }
+  .lin-stage .phone { height: auto; min-height: 640px; }
+  .lin-panel { border-radius: 0; border-left: 0; border-right: 0; }
+  .lin-panel .btn-big { display: none; }
+}

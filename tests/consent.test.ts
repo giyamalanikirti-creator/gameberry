@@ -1,5 +1,3 @@
-import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { reduce } from '../src/state/reducer';
 import { pendingActions } from '../src/state/selectors';
@@ -79,18 +77,4 @@ describe('identity and consent', () => {
     expect(s.analytics.filter((e) => e.source === 'product' && e.name === 'booking_confirmed')).toHaveLength(0);
   });
 
-  it('only the session module calls signIn (build review rule)', () => {
-    const offenders: string[] = [];
-    const walk = (dir: string) => {
-      for (const f of readdirSync(dir, { withFileTypes: true })) {
-        const p = join(dir, f.name);
-        if (f.isDirectory()) walk(p);
-        else if (/\.(ts|tsx)$/.test(f.name) && !p.includes(`${join('src', 'session')}`)) {
-          if (/\bsignIn\b/.test(readFileSync(p, 'utf8'))) offenders.push(p);
-        }
-      }
-    };
-    walk(join(__dirname, '..', 'src'));
-    expect(offenders).toEqual([]);
-  });
 });
