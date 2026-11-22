@@ -57,11 +57,12 @@ The **Demo controls** button sits top right. Its badge shows the active identity
   - The guided seed runs Kirti 2, Ahmed 3, Kirti 2, so Kirti wins.
   - *Fresh dice* uses a seeded RNG (mulberry32) whose state is saved after every roll.
   - Seed **5** is the tested alternate: Kirti rolls 5 and overshoots, then Ahmed rolls exactly 5 and wins.
+- **Look and feel.** The app is styled as an in-game screen: dark backdrop, the conventional board layout (green top-left, yellow top-right, blue bottom-right, red bottom-left), each player's avatar with a dice box beside it (you tap your dice to roll), and a glowing ring on whoever's turn it is. Kirti plays red from the bottom-left and Ahmed yellow from the top-right; each player's view rotates the board so their own seat sits at the bottom. All artwork, tokens, dice and colours are original, and the screen does not copy Ludo STAR's own visual assets or branding.
 - **Fixed score order.** Every view lists *Ahmed · Kirti* (`SCORE_ORDER`), matching the brief's first-screen copy.
 - **Board geometry.** The board is the conventional 15 × 15 cross with a 52-square loop. Where the arms meet the centre, the track takes the usual diagonal step at each corner, and `validateRoute` allows only that diagonal. Safe squares are the four start squares and four stars, at loop indices 0, 8, 13, 21, 26, 34, 39 and 47.
 - **The capture fixture** (`src/board/replay.ts`):
-  - Kirti (blue) is on route square 50. That is her last shared-track square, and the next step is her protected lane.
-  - Ahmed (red) starts on his square 21 and rolls a 3 through 22 and 23 to 24. That lands on the same loop square from behind.
+  - Kirti (red, bottom-left) is on route square 50. That is her last shared-track square, and the next step is her protected lane.
+  - Ahmed (yellow, top-right) starts on his square 21 and rolls a 3 through 22 and 23 to 24. That lands on the same loop square from behind.
   - The engine test replays this through `applyMove` and checks each claim:
     - the destination is shared and unprotected;
     - Kirti's single token is the only one there;

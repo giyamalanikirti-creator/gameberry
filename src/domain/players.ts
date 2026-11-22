@@ -4,7 +4,7 @@ export const PLAYERS: Record<PlayerId, Player> = {
   kirti: {
     id: 'kirti',
     name: 'Kirti',
-    color: 'blue',
+    color: 'red',
     shape: 'circle',
     initial: 'K',
     possessive: 'her',
@@ -14,7 +14,7 @@ export const PLAYERS: Record<PlayerId, Player> = {
   ahmed: {
     id: 'ahmed',
     name: 'Ahmed',
-    color: 'red',
+    color: 'yellow',
     shape: 'diamond',
     initial: 'A',
     possessive: 'his',

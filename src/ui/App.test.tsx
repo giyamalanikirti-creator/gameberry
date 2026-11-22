@@ -72,7 +72,7 @@ describe('App', () => {
   });
 
   it('offers a reset when saved data fails validation', () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, domain: {}, ui: {} }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, domain: {}, ui: {} }));
     render(<App tickMs={60_000} />);
     expect(screen.getByRole('alertdialog')).toBeTruthy();
     act(() => click('Reset demo'));

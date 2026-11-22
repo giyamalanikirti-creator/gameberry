@@ -22,7 +22,7 @@ export function createInitialState(): DomainState {
         kind: 'original',
         number: 1,
         challengeId: null,
-        seats: { blue: 'kirti', red: 'ahmed' },
+        seats: { red: 'kirti', yellow: 'ahmed' },
         status: 'completed',
         createdAt: ORIGINAL_COMPLETED_AT - 9 * MINUTE,
         completedAt: ORIGINAL_COMPLETED_AT,

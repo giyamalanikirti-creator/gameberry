@@ -14,7 +14,7 @@ interface Props {
   compact?: boolean;
 }
 
-const names = { blue: PLAYERS.kirti.name, red: PLAYERS.ahmed.name };
+const names = { red: PLAYERS.kirti.name, yellow: PLAYERS.ahmed.name };
 
 /**
  * Plays a stored event from its own snapshot. Nothing here touches the live

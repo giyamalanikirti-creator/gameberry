@@ -23,9 +23,9 @@ export interface ReplayEvent {
 }
 
 /**
- * Yesterday's capture. Kirti (blue) had three tokens home and her last token on
+ * Yesterday's capture. Kirti (red) had three tokens home and her last token on
  * route square 50, the last shared-track square before her protected lane.
- * Ahmed (red) rolled a 3 from square 21 and landed on it from behind.
+ * Ahmed (yellow) rolled a 3 from square 21 and landed on it from behind.
  * The engine test replays this through `applyMove` and checks every field.
  */
 export const ORIGINAL_CAPTURE: ReplayEvent = {
@@ -33,13 +33,13 @@ export const ORIGINAL_CAPTURE: ReplayEvent = {
   matchId: 'm-original',
   kind: 'capture',
   actor: 'ahmed',
-  color: 'red',
+  color: 'yellow',
   tokenIndex: 3,
   roll: 3,
-  before: { blue: [56, 56, 56, 50], red: [56, 56, 53, 21] },
+  before: { red: [56, 56, 56, 50], yellow: [56, 56, 53, 21] },
   path: [22, 23, 24],
-  capture: { player: 'kirti', color: 'blue', tokenIndex: 3, from: 50, to: YARD },
-  after: { blue: [56, 56, 56, -1], red: [56, 56, 53, 24] },
+  capture: { player: 'kirti', color: 'red', tokenIndex: 3, from: 50, to: YARD },
+  after: { red: [56, 56, 56, -1], yellow: [56, 56, 53, 24] },
 };
 
 export interface ReplayFrame {

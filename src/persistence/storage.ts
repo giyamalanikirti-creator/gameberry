@@ -5,7 +5,7 @@
 import type { DomainState, PlayerId } from '../domain/types';
 
 export const STORAGE_KEY = 'badla-demo';
-export const SNAPSHOT_VERSION = 1;
+export const SNAPSHOT_VERSION = 2;
 
 export type Screen =
   | { name: 'result'; matchId: string }
@@ -75,7 +75,7 @@ export function validateSnapshot(raw: unknown): string | null {
     if (!isObj(m) || typeof m.id !== 'string' || !isObj(m.seats)) return 'bad match';
     if (m.status === 'playing') {
       const g = m.game;
-      if (!isObj(g) || !isObj(g.tokens) || !Array.isArray((g.tokens as Record<string, unknown>).blue) || typeof g.rollCount !== 'number' || !isObj(g.dice)) {
+      if (!isObj(g) || !isObj(g.tokens) || !Array.isArray((g.tokens as Record<string, unknown>).red) || typeof g.rollCount !== 'number' || !isObj(g.dice)) {
         return 'bad live game';
       }
     }

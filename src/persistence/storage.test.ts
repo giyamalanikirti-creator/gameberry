@@ -74,7 +74,7 @@ describe('persistence', () => {
     expect(loadSnapshot(localStorage).status).toBe('invalid');
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 99 }));
     expect(loadSnapshot(localStorage)).toMatchObject({ status: 'invalid' });
-    const bad = { version: 1, savedAt: 0, domain: { ...createInitialState(), results: [{ matchId: 'ghost', winner: 'kirti' }] }, ui };
+    const bad = { version: 2, savedAt: 0, domain: { ...createInitialState(), results: [{ matchId: 'ghost', winner: 'kirti' }] }, ui };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(bad));
     expect(loadSnapshot(localStorage)).toMatchObject({ status: 'invalid', reason: 'result for unknown match' });
   });

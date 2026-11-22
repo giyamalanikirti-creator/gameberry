@@ -7,7 +7,7 @@ import { Board, TokenLegend } from '../components/Board';
 import { Avatar, ScoreLine, ScreenLayout } from '../components/Common';
 import { useBadla } from '../store';
 
-const names = { blue: PLAYERS.kirti.name, red: PLAYERS.ahmed.name };
+const names = { red: PLAYERS.kirti.name, yellow: PLAYERS.ahmed.name };
 
 function Die({ value, rolling }: { value: number | null; rolling?: boolean }) {
   const pips: Record<number, Array<[number, number]>> = {
@@ -53,23 +53,60 @@ function statusText(match: Match, viewer: PlayerId): string {
   return `${prefix}${turnPlayer.name}'s turn${turnPlayer.id === 'ahmed' ? ' (demo opponent)' : ''}.`;
 }
 
-function Strip({ match, color, viewer }: { match: Match; color: Color; viewer: PlayerId }) {
+function dieFor(match: Match, color: Color): number | null {
+  const g = match.game!;
+  if (g.turn === color && g.die !== null) return g.die;
+  if (g.lastMove?.color === color && g.note?.color === color) return g.lastMove.roll;
+  if (g.note?.color === color) return g.note.roll;
+  return null;
+}
+
+/** A player's seat: avatar with a turn ring, name, and their dice box beside it. */
+function Seat({ match, color, viewer, side, onRoll, canRoll }: {
+  match: Match;
+  color: Color;
+  viewer: PlayerId;
+  side: 'top' | 'bottom';
+  onRoll?: () => void;
+  canRoll?: boolean;
+}) {
   const g = match.game!;
   const pid = match.seats[color];
   const p = PLAYERS[pid];
   const active = g.tokens[color].find((pos) => pos !== 56);
   const isTurn = g.turn === color && !g.winner;
+  const value = dieFor(match, color);
+  const dice = onRoll ? (
+    <button
+      type="button"
+      className={`dice-box dice-box-${color}${canRoll ? ' dice-box-go' : ''}`}
+      onClick={onRoll}
+      disabled={!canRoll}
+      aria-label="Roll"
+    >
+      <Die value={value} />
+      {canRoll && <span className="dice-hint" aria-hidden="true">Tap to roll</span>}
+    </button>
+  ) : (
+    <span className={`dice-box dice-box-${color}${isTurn ? ' dice-box-live' : ''}`} aria-hidden="true">
+      <Die value={value} />
+    </span>
+  );
   return (
-    <div className={`strip strip-${color}${isTurn ? ' strip-turn' : ''}`}>
-      <Avatar player={pid} />
-      <div className="strip-text">
-        <strong>{p.name}{pid === viewer ? ' (you)' : ''}</strong>
-        <small>
-          {pid === 'ahmed' ? 'Demo opponent · same rules · ' : ''}
-          {active === undefined ? 'All home' : `${stepsToFinish(active)} to finish`}
-        </small>
+    <div className={`seat-row seat-row-${side}`}>
+      <div className="seat-who">
+        <span className={`seat-avatar${isTurn ? ' seat-avatar-turn' : ''}`}>
+          <Avatar player={pid} size="lg" />
+        </span>
+        <span className="seat-name">
+          <strong>{p.name}{pid === viewer ? ' (you)' : ''}</strong>
+          <small>
+            {pid === 'ahmed' ? 'Demo opponent · ' : ''}
+            {active === undefined ? 'All home' : `${stepsToFinish(active)} to finish`}
+          </small>
+        </span>
       </div>
-      {isTurn && <span className="turn-tag">Turn</span>}
+      {dice}
     </div>
   );
 }
@@ -109,7 +146,7 @@ export function MatchScreen({ matchId }: { matchId: string }) {
       label={`Match ${match.number}`}
       stage={
         <div className="match">
-          <Strip match={match} color={top} viewer={viewer} />
+          <Seat match={match} color={top} viewer={viewer} side="top" />
           <Board
             tokens={g.tokens}
             perspective={myColor}
@@ -118,32 +155,29 @@ export function MatchScreen({ matchId }: { matchId: string }) {
             focus={g.lastMove ? [{ color: g.lastMove.color, tokenIndex: g.lastMove.tokenIndex }] : []}
             movable={legal.length ? { color: g.turn, tokens: legal, steps: g.die!, onMove: move } : null}
           />
-          <div className="match-bottom">
-            <Strip match={match} color={myColor} viewer={viewer} />
-            <div className="dice-row">
-              <Die value={g.die ?? g.note?.roll ?? null} />
-              {viewer === 'kirti' ? (
-                legal.length ? (
-                  <button type="button" className="btn btn-primary btn-big" onClick={() => move(legal[0])}>
-                    Move {g.die}
-                  </button>
-                ) : (
-                  <button type="button" className="btn btn-primary btn-big" onClick={roll} disabled={!myTurn || g.die !== null}>
-                    Roll
-                  </button>
-                )
-              ) : (
-                <button type="button" className="btn btn-secondary" onClick={() => switchViewer('kirti', { handoff: true })}>
-                  Play as Kirti
-                </button>
-              )}
-            </div>
-          </div>
+          <p className="status" role="status" aria-live="polite">{status}</p>
+          <Seat
+            match={match}
+            color={myColor}
+            viewer={viewer}
+            side="bottom"
+            onRoll={viewer === 'kirti' ? roll : undefined}
+            canRoll={myTurn && g.die === null}
+          />
+          {viewer === 'kirti' && legal.length > 0 && (
+            <button type="button" className="btn btn-primary btn-big" onClick={() => move(legal[0])}>
+              Move {g.die}
+            </button>
+          )}
+          {viewer !== 'kirti' && (
+            <button type="button" className="btn btn-secondary" onClick={() => switchViewer('kirti', { handoff: true })}>
+              Play as Kirti
+            </button>
+          )}
         </div>
       }
       panel={
         <div className="actions">
-          <p className="status" role="status" aria-live="polite">{status}</p>
           <p className="eyebrow">Match {match.number} · Quick-style endgame</p>
           <ScoreLine domain={domain} />
           <details className="rules">

@@ -13,10 +13,10 @@ import {
 
 export type Tokens = Record<Color, number[]>;
 
-export const COLORS: Color[] = ['blue', 'red'];
+export const COLORS: Color[] = ['red', 'yellow'];
 
 export function opponentOf(color: Color): Color {
-  return color === 'blue' ? 'red' : 'blue';
+  return color === 'red' ? 'yellow' : 'red';
 }
 
 export interface Capture {
@@ -37,7 +37,7 @@ export interface MoveOutcome {
 }
 
 export function cloneTokens(tokens: Tokens): Tokens {
-  return { blue: [...tokens.blue], red: [...tokens.red] };
+  return { red: [...tokens.red], yellow: [...tokens.yellow] };
 }
 
 /** Destination for a token and roll, or null if the move is illegal. */
@@ -134,15 +134,15 @@ export interface LiveGame {
 
 /**
  * Demo rules: three tokens home on each side, one token in its own protected
- * lane. Kirti (blue) needs 4 to finish, Ahmed (red) needs 5. Kirti starts.
+ * lane. Kirti (red) needs 4 to finish, Ahmed (yellow) needs 5. Kirti starts.
  */
 export function endgameStart(dice: DiceState): LiveGame {
   return {
     tokens: {
-      blue: [FINISH_INDEX, FINISH_INDEX, FINISH_INDEX, FIRST_LANE_INDEX + 1],
-      red: [FINISH_INDEX, FINISH_INDEX, FINISH_INDEX, FIRST_LANE_INDEX],
+      red: [FINISH_INDEX, FINISH_INDEX, FINISH_INDEX, FIRST_LANE_INDEX + 1],
+      yellow: [FINISH_INDEX, FINISH_INDEX, FINISH_INDEX, FIRST_LANE_INDEX],
     },
-    turn: 'blue',
+    turn: 'red',
     die: null,
     rollCount: 0,
     dice,

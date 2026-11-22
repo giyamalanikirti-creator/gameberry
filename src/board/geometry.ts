@@ -11,7 +11,7 @@
  * home lane (51–55) and finishes in the centre (56).
  */
 
-export type Color = 'blue' | 'red';
+export type Color = 'red' | 'yellow';
 export type Quadrant = 'tl' | 'tr' | 'br' | 'bl';
 
 export interface Cell {
@@ -28,7 +28,7 @@ export const FINISH_INDEX = 56;
 export const YARD = -1;
 
 /** Active colours in this two-player concept and the yard each one owns. */
-export const COLOR_QUADRANT: Record<Color, Quadrant> = { blue: 'bl', red: 'tr' };
+export const COLOR_QUADRANT: Record<Color, Quadrant> = { red: 'bl', yellow: 'tr' };
 
 /** Index in LOOP where each quadrant's start square sits. */
 export const START_OFFSET: Record<Quadrant, number> = { tl: 0, tr: 13, br: 26, bl: 39 };
@@ -100,7 +100,7 @@ export function route(color: Color): Cell[] {
   return [...track, ...LANES[q], FINISH_CELL[q]];
 }
 
-export const ROUTES: Record<Color, Cell[]> = { blue: route('blue'), red: route('red') };
+export const ROUTES: Record<Color, Cell[]> = { red: route('red'), yellow: route('yellow') };
 
 /** Loop index of a route position on the shared track, or null if not on it. */
 export function loopIndexOf(color: Color, pos: number): number | null {

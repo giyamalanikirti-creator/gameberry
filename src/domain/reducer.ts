@@ -144,7 +144,7 @@ function createMatch(d: DomainState, c: Challenge, at: number): Match {
     kind: 'rematch',
     number,
     challengeId: c.id,
-    seats: { blue: 'kirti', red: 'ahmed' },
+    seats: { red: 'kirti', yellow: 'ahmed' },
     status: 'playing',
     createdAt: at,
     completedAt: null,
@@ -486,7 +486,7 @@ function apply(d: DomainState, a: Exclude<Action, { type: 'tick' }>): string | v
     case 'leaveMatch': {
       const m = d.matches[a.matchId];
       if (!m || m.status !== 'playing') return 'match not in progress';
-      if (m.seats.blue !== a.actor && m.seats.red !== a.actor) return 'not in this match';
+      if (m.seats.red !== a.actor && m.seats.yellow !== a.actor) return 'not in this match';
       m.status = 'abandoned';
       m.completedAt = at;
       if (m.challengeId) close(d.challenges[m.challengeId], 'abandoned', at);
