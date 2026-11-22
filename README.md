@@ -1,108 +1,155 @@
-# Badla for Ludo STAR: playable concept
+# Badla: Doubles, Partner Assist, Grudge Night
 
-**Badla** is a return match that both players agree to. When a close 1v1 ends, the player who was caught can attach that one capture to an invitation. The opponent can play now, choose a time tomorrow evening, or pass. If they agree, both players come back, play the match, and the head-to-head score updates.
+A concept prototype for a Ludo social loop. **Concept prototype, not affiliated with Gameberry.** All artwork is original SVG, nothing leaves the device, and the gold figures are proposed pilot values.
 
-This repo is a **single-device case-study demo**. It has two fictional accounts (Kirti and Ahmed), a demo clock you can control and a local notification inbox. You don't sign in, invite anyone, grant permissions or wait until tomorrow. It doesn't use external APIs or any Gameberry systems. It is not the live game, and the in-app demo controls say so ("Playable concept").
+The story runs on one device with five logins over two days. Gunjan beats Riya in a 100-gold singles game. Riya takes Badla and brings Ananya. Gunjan defends and brings Shruti. Riya and Ananya win the Doubles, so the captains sit at 1-1 and Ananya gets a Partner Assist receipt. All four book tomorrow's decider as **Grudge Night**, a club fixture. Dev, a clubmate, picks a side. The next evening Gunjan and Shruti win the decider 2-1, and every wallet and prediction settles.
 
-| Original result | Ahmed's invitation | Kirti confirms | Reminder | Rematch | One each |
-|---|---|---|---|---|---|
-| ![](docs/screenshots/01-mobile-result.png) | ![](docs/screenshots/04-mobile-ahmed-invite.png) | ![](docs/screenshots/06-mobile-kirti-confirm.png) | ![](docs/screenshots/08-mobile-kirti-reminder.png) | ![](docs/screenshots/09-mobile-match-start.png) | ![](docs/screenshots/10-mobile-one-each.png) |
+| 1 · Opening | 3 · Challenge received | 5 · Partner invite | 7 · Doubles endgame |
+|---|---|---|---|
+| ![](docs/screenshots/01-opening.png) | ![](docs/screenshots/03-received.png) | ![](docs/screenshots/05-partner.png) | ![](docs/screenshots/07-endgame.png) |
+| **8 · Partner Assist** | **9 · Book the decider** | **10 · Club fixture** | **12 · Club result** |
+| ![](docs/screenshots/08-assist.png) | ![](docs/screenshots/09-booking.png) | ![](docs/screenshots/10-fixture.png) | ![](docs/screenshots/12-club-result.png) |
+
+Desktop: the phone frame with the analytics panel beside it. ![](docs/screenshots/desktop.png)
 
 ## Commands
 
 Requires Node 20+ (tested on Node 22).
 
 ```bash
-npm install          # install
-npm run dev          # dev server at http://localhost:5173
-npm run typecheck    # TypeScript, no emit
-npm test             # Vitest (domain, board, persistence, UI)
-npm run build        # typecheck + production build into dist/
-npm run preview      # serve dist/
-npm run e2e          # browser walkthrough (needs a running server and the `playwright` package)
+npm install        # install
+npm run dev        # http://localhost:5173
+npm run typecheck  # TypeScript
+npm test           # Vitest: 8 suites, 66 tests
+npm run build      # typecheck + production build into dist/
+npm run preview    # serve dist/
+npm run e2e        # browser walkthrough of the whole story (needs a running server and `playwright`)
 ```
 
-`dist/` uses relative asset paths, so any static host (or a phone's browser) can open it.
+## The demo script
 
-## The guided story (about 3 minutes)
+Everything you do as a player happens in **that player's own session**. You switch player only through the **account pane** at the top right. No screen in the phone has a "continue as" control. When the next move belongs to someone else, the screen shows who it is waiting on and since when, and the account pane shows a badge on that player.
 
-1. **Kirti, 22 Nov, 19:30 India time.** "Ahmed wins." with *Ahmed 1 · Kirti 0*. The hero card replays the capture from earlier in that match: *"Ahmed caught your last token just before safety."* Tap **Ask for Badla**.
-2. The lobby card reads *"You challenged Ahmed."* with Withdraw and Watch replay. The **Demo guide** bar offers **Try Ahmed's view**.
-3. **Ahmed** sees *"Kirti wants a rematch"* with the same capture from his side ("You caught Kirti's last token…"), shown on a board rotated to his seat. He picks **Tomorrow evening**: 19:00–19:30 Pakistan time, which Kirti sees as 19:30–20:00 India time.
-4. Back with **Kirti**, she taps **Confirm time**. Only her confirmation books the match.
-5. **Advance to agreed time.** Ahmed taps **I'm ready**. Kirti gets one simulated reminder: *"Ahmed is ready for your Badla match."* Tapping it rechecks the state and opens the shared table. Then **Join match**.
-6. **Quick-style endgame.** You play Kirti's turns, and a labelled demo opponent plays Ahmed's turns with the same rules. With the guided seed, Kirti wins.
-7. **"One each. Play the decider?"** with *Ahmed 1 · Kirti 1*. The decider needs Ahmed to accept again. Choose Play now for him, and Kirti joins match 3.
+| # | Sign in as (PIN) | Do |
+|---|---|---|
+| 1 | Riya (2222) | Home → **See the result · Take Badla**. Watch the capture replay, then **Take Badla**. |
+| 2 | Riya | Challenge sheet: **Badla Doubles · You pay 100 · Win 200 back**, Play now, **Send to Gunjan**. |
+| 3 | Gunjan (1111) | **Waiting on you → Badla challenge** → **Accept · 100 gold on start**. |
+| 4 | Gunjan, then Riya | Seat board **2 of 4 seats filled** → each captain invites one friend (Shruti, Ananya). |
+| 5 | Ananya (3333), Shruti (4444) | Each accepts **their own** invitation ("Riya is down 0-1 to Gunjan. Join her side? Entry 100 gold. Win 200 back."). |
+| 6 | All four | Waiting table → **Ready · 100 gold**. All four entries are debited together when the last seat is ready. |
+| 7 | Riya, Gunjan, Ananya | Each takes their own turn: Roll, then Move. Ananya finishes on the exact 2, so Riya and Ananya win. |
+| 8 | Ananya, Shruti, Riya | Receipts: Ananya gets **You helped Riya take it to 1-1** and **Save my seat**. Shruti gets "One each. Defend the series with Gunjan?". Riya gets **Host Grudge Night**. |
+| 9 | Riya, then Gunjan, Ananya, Shruti | Riya offers *Tomorrow 9:00–9:30 pm*. Gunjan chooses it (2 of 4), then Ananya and Shruti confirm (4 of 4). |
+| 10–11 | Dev (5555) | The club card appears only now. Dev picks **Riya & Ananya**: "Your pick is in. Result tomorrow." |
+| 12 | Demo controls → **Jump to tomorrow's slot**, then all four | Predictions lock and check-in opens. Each player taps Ready and plays a turn. Gunjan and Shruti win 2-1. Dev sees "You picked Riya & Ananya. Not this time." |
 
-**The Play now path** uses no clock controls. Ahmed taps Play now, which marks him ready and opens a 5-minute table. Kirti joins from the notification or dismisses it with "Not now".
+"Remember this device" is on by default, so each PIN is entered only once. **Lock all sessions** clears them.
 
-## Demo controls
+**Balance checkpoints.** These are the regression test, and `tests/wallet.test.ts` asserts each row.
 
-The **Demo controls** button sits top right. Its badge shows the active identity's unread notifications.
+| Point | Gunjan | Riya | Ananya | Shruti | Dev | Total |
+|---|---|---|---|---|---|---|
+| Seeded | 1,000 | 1,000 | 1,000 | 1,000 | 1,000 | 5,000 |
+| Opening result applied (start screen) | 1,100 | 900 | 1,000 | 1,000 | 1,000 | 5,000 |
+| After the guided Doubles comeback | 1,000 | 1,000 | 1,100 | 900 | 1,000 | 5,000 |
+| After the guided decider | 1,100 | 900 | 1,000 | 1,000 | 1,000 | 5,000 |
 
-- **View as Kirti / Ahmed.** Both views read the same stored state. The active identity always shows in the header.
-- **Opponent response: Guided / Manual.** Guided shows a handoff prompt when the next move belongs to the other player. It never acts for that player: you tap every choice yourself. Manual shows no prompts.
-- **Clock.** The demo clock runs in real time from 22 Nov 2026, 14:00 UTC. Buttons: *Advance to agreed time*, +5 min, +1 h, +1 day. Each advance rechecks expiries.
-- **Notification inbox.** Local entries keyed by invitation ID.
-- **Dice for the next match.** *Guided seed (2, 3, 2)* or *Fresh dice*. This is locked while a match is running.
-- **Motion.** System, Reduced or Full.
-- **Reset demo.** Restores the original state: Ahmed's single recorded win and nothing else.
-- **Event log.** Output from the analytics adapter, with active player-days. It lives only in the demo controls and players never see it.
+## Deterministic dice and fixtures
 
-## Choices made for the demo only
+The board is a Quick endgame in a demo variant. Each player has one active token in their own protected lane. One die per turn, no extra turn on a six, finishing needs an exact roll, and an overshoot passes the turn. Turn order is Riya, Gunjan, Ananya, Shruti, so the sides alternate. Partners sit in opposite yards.
 
-- **Two fictional, eligible accounts on one device.** Production would authenticate both players and check Game Buddy and 1v1 eligibility.
-- **Reconstructed screens.** The result screen, lobby and match handoff are plausible reconstructions, not the real Ludo STAR layout. All artwork is original SVG, and fonts are system fonts.
-- **Quick-style endgame instead of Quick mode.** Each side starts with three tokens home and one token in its own protected lane. Kirti needs exactly 4 and Ahmed exactly 5. Kirti moves first, with one die per turn and no extra turns. A roll that overshoots passes the turn and the screen explains why. Finished tokens stay visible in the centre.
-  - The guided seed runs Kirti 2, Ahmed 3, Kirti 2, so Kirti wins.
-  - *Fresh dice* uses a seeded RNG (mulberry32) whose state is saved after every roll.
-  - Seed **5** is the tested alternate: Kirti rolls 5 and overshoots, then Ahmed rolls exactly 5 and wins.
-- **Look and feel.** The app is styled as an in-game screen: dark backdrop, the conventional board layout (green top-left, yellow top-right, blue bottom-right, red bottom-left), each player's avatar with a dice box beside it (you tap your dice to roll), and a glowing ring on whoever's turn it is. Kirti plays red from the bottom-left and Ahmed yellow from the top-right; each player's view rotates the board so their own seat sits at the bottom. All artwork, tokens, dice and colours are original, and the screen does not copy Ludo STAR's own visual assets or branding.
-- **Fixed score order.** Every view lists *Ahmed · Kirti* (`SCORE_ORDER`), matching the brief's first-screen copy.
-- **Board geometry.** The board is the conventional 15 × 15 cross with a 52-square loop. Where the arms meet the centre, the track takes the usual diagonal step at each corner, and `validateRoute` allows only that diagonal. Safe squares are the four start squares and four stars, at loop indices 0, 8, 13, 21, 26, 34, 39 and 47.
-- **The capture fixture** (`src/board/replay.ts`):
-  - Kirti (red, bottom-left) is on route square 50. That is her last shared-track square, and the next step is her protected lane.
-  - Ahmed (yellow, top-right) starts on his square 21 and rolls a 3 through 22 and 23 to 24. That lands on the same loop square from behind.
-  - The engine test replays this through `applyMove` and checks each claim:
-    - the destination is shared and unprotected;
-    - Kirti's single token is the only one there;
-    - Ahmed's other tokens are off the track.
-  - The capture happened earlier in the match, before Ahmed's win.
-- **Replay copy is derived from the event data.** "last token" and "just before safety" appear only when the stored event supports them. A finishing move reads "brought … last token home first". The replay plays from a stored snapshot and never changes live state or the record.
-- **Notifications are in-app simulations.** Each player gets at most one readiness reminder per invitation. A reminder is suppressed when the recipient has muted reminders, when the pair is blocked, when the invitation is closed or when it would be a duplicate. Opening the app never notifies anyone.
-- **Persistence is versioned `localStorage`** (`badla-demo`). The snapshot is validated before it is restored. If it fails, the app offers a reset and doesn't overwrite the saved data until you choose to.
+The **guided story** uses `comeback` for round 2 and `decider` for round 3. The engine derives every result from these seeds; no screen writes a winner.
 
-## Rules implemented
+| Fixture | Doubles distances (R, G, A, S) | Rolls | Engine result |
+|---|---|---|---|
+| `comeback` | 2, 3, 2, 3 | 2, 1, 2 | Riya & Ananya win |
+| `decider` | 3, 2, 3, 2 | 1, 2, 1, 2 | Gunjan & Shruti win |
+| `sweep-gunjan` | 4, 2, 4, 2 | 1, 2, 1, 2 | Gunjan's side (2-0 sweep in round 2) |
+| `sweep-riya` | 2, 4, 2, 4 | 2, 1, 2 | Riya's side, straight rolls |
+| `decider-riya` | 3, 3, 2, 4 | 3, 1, 2 | Riya's side (alternate decider) |
 
-- **Challenge lifecycle.** States run `pending → proposed → scheduled → waiting → playing → completed`. Play now goes straight from `pending` to `waiting`.
-- **Terminal states.** These are `declined`, `withdrawn`, `expired`, `cancelled`, `missed`, `blocked`, `abandoned` and `completed`. A terminal invitation can't be revived, including from a stale notification.
-- **Permissions.** Only the invitee can play now, propose a time or pass. Only the challenger can confirm, decline or withdraw. Either player can cancel a booked match before it starts.
-- **Invitation limits.** Each completed match gets one invitation, and only one invitation can be open at a time. A new invitation for the same match is allowed only after a no-fault outcome: missed, an agreed window nobody used, or an abandoned match.
-- **Time.** Windows are stored as UTC instants and formatted with `Intl.DateTimeFormat` in each player's zone. Intervals include the start and exclude the end.
-  - Pending invitations expire after 24 h.
-  - Proposals expire after 24 h or at the window start, whichever comes first.
-  - A seat is held for 5 minutes or until the window ends, whichever comes first. A player can mark ready again while the window is open.
-  - If a window closes with one player ready, the card says "You missed each other". There is no score change.
-- **Matches.** Both players joining while their readiness overlaps creates exactly one match. A result is recorded once per match ID. Double taps, stale rolls, refreshes, repeated completions and abandoned matches can't add a win.
+Every fixture also has a singles script. You choose the fixture for the next round, or **Random dice**, in the Demo drawer. The choice is locked while a match is live. A rolled but unspent die survives a refresh. Optional **auto-play** takes other seats' turns once a human has rolled first. It never starts a round, readies a seat or confirms a booking.
+
+**The opening replay** reads an immutable snapshot of the opening game. In it, Gunjan (teal) rolls 3 from square 34 and lands on Riya's last token. That token is on square 50, the last shared square before Riya's protected lane. `tests/engine.test.ts` replays this through the move rules and checks it. With reduced motion, the replay shows only the final frame, with a caption.
+
+## The consent shortcut
+
+The Demo drawer's **Auto-confirm remaining players** fills outstanding booking confirmations and renews stale acceptances. Every record it creates carries `source: "demo"`, and the analytics panel leaves those records out. It never appears inside a product screen.
+
+## The simulated clock
+
+The clock is seeded at **Sun 22 Nov 2026, 8:14 pm IST** and runs in real time. An amber dot on the clock chip shows when it has been moved off real time. All times are stored as UTC instants and shown in the viewer's zone. Windows include their start and exclude their end.
+
+The Demo drawer has +15 min, +1 hour, Jump to window open, Jump to tomorrow's slot, and Reset to real time.
+
+Time can open and close windows, expire invitations (24 h), lock predictions at the start time, fire reminders, and expire a series after 7 days without a decider. Time **cannot settle a round, decide a board or move gold**. `tests/clock.test.ts` proves this.
+
+## What the reducer guarantees
+
+- **Identity and consent.** Every action takes the actor from the signed-in session, never from the payload.
+  - Opening another player's invitation shows it read-only, with "This invitation is for Ananya".
+  - Navigation and opening a notification never change consent.
+  - Only `src/session/` mentions `signIn`, and a test fails the build if any other file does.
+- **One atomic start.** `startRound` checks the whole roster, every acceptance and every balance first. Only then does it write all entry debits.
+  - A blocked start names the seat, for example "Shruti needs 100 gold to join".
+  - No partial debit is ever written.
+- **Idempotency.**
+  - Settlement is keyed by round ID and refunds by `roundId:refund:playerId`.
+  - A second settle, a repeated finish, a double-tapped start or a duplicate invite does nothing.
+- **Gold is conserved.**
+  - Balances are never stored; a balance is the sum of the ledger.
+  - With the sweep bonus off, balances plus the pot in play equal 5,000 after every action.
+  - Balances alone equal 5,000 whenever no round is live.
+  - The Demo drawer shows the five balances, the pot and the total.
+- **Terms changes force re-acceptance.** Each acceptance stores a terms hash covering format, entry, roster version, timing, slot and club visibility. If any of these change, the seat shows **Terms changed · Confirm again**.
+- **Club fixture.** It is published only after four matching confirmations, with at most one live listing per round. Withdrawing it is terminal for that listing. Only club members can see it, and that is checked when the fixture is read. Participants can't predict. Totals stay hidden until the round settles.
+- **Notifications.**
+  - All notifications are local.
+  - Each player gets at most two Badla notifications a day.
+  - Muting suppresses notifications but keeps the cards.
+  - Blocking ends every Badla link with that player.
+  - A notification for someone who isn't signed in shows as a toast on the shell. Tapping the toast opens the account pane with that player highlighted.
+
+## Analytics panel
+
+The panel sits beside the phone, or under it below 900 px. It counts only `source: "product"` events.
+
+- **Active days.** A 7-day strip per player, with a ★ for each incremental active day after the opening game.
+- **Funnel.** The base-case rates (65%, 22%, 60%, 50%, 66%, 60%) plus the two Doubles partner stages. Stages light up as the demo path reaches them.
+- **DAU calculator.** Lift = participation × extra days / 7.5. The base case is 34% × 2.26, giving **+10.2%**, about **+153K** on 1.5M DAU. Snaps are Low 5.1% and High 16.9%. These are illustrative inputs from the case model, to be replaced with Ludo STAR analytics.
+- **Guardrails.** Counters for gold-entry declines, four-seat no-shows, push mutes, blocks and suppressed notifications.
+- **Event log.**
+
+## Rulings and deviations
+
+The SOP's rulings were applied throughout: gold stakes, the settled-game trigger, either captain can start, first to two, a five-person cast, and no League credit for Badla rounds. Where the spec left gaps or contradicted itself, this build does the following:
+
+- **Calendar.** 22 Nov 2026 is a Sunday, so the clock reads "Sun 22 Nov", not "Sat".
+- **Slot window.** The spec says the host offers up to two slots "inside 24 hours", but its own guided slot (tomorrow 9 pm) is booked about 24¼ hours ahead. Slots are therefore allowed **up to the end of tomorrow**.
+- **Conservation.** It is stated as balances plus the pot in play. During a live round, 400 gold sits in the pot, so balances alone can't sum to 5,000 then.
+- **Roster changes.** Acceptances tie to a *roster version*, so filling an open seat doesn't make earlier acceptances stale. A replacement, a drop-out or a switch to singles does.
+- **`sweep-riya`.** It can't be a true 2-0, because the opening win is Gunjan's. It is a straight-rolls win for Riya's side.
+- **Saved seats.** They express interest only, as the SOP currently has it. A Grudge Night decider reuses the previous Doubles pairs, and each of the four confirms the booking.
+- **Leaving.** Leaving the series isn't allowed during a live match. "Leave match" voids the round, and every entry is refunded once.
+- **Mute vs block.** The earlier spec said muting ends Badla links. Here, **block** ends them and **mute** only suppresses notifications. That matches "mutes leave the lobby card available".
+- **Single offered slot.** When the host offers exactly one slot, that offer counts as the host's confirmation of it once it is chosen.
 
 ## Code map
 
-| Part | File(s) |
-|---|---|
-| Domain reducer (transitions, permissions, clock, score) | `src/domain/reducer.ts`, `selectors.ts`, `types.ts` |
-| Time and zones | `src/domain/time.ts` |
-| Board geometry, movement, dice, replay frames | `src/board/geometry.ts`, `engine.ts`, `dice.ts`, `replay.ts` |
-| Notification adapter | `src/domain/notifications.ts` |
-| Analytics adapter | `src/domain/analytics.ts` |
-| Persistence | `src/persistence/storage.ts` |
-| Screens | `src/ui/screens/*` (Result, Lobby, Invite, Table, Match, Rivalry) |
-| Store, navigation, demo guide | `src/ui/store.ts`, `navigation.ts`, `guide.ts` |
-| Tests | `src/**/*.test.ts(x)`, `e2e/journey.cjs` |
+```
+src/
+  engine/     board.ts (geometry, routes), rules.ts, dice.ts, fixtures.ts, replay.ts
+  domain/     types.ts, time.ts
+  state/      reducer.ts, selectors.ts, seed.ts, persistence.ts (badla.v1), store.tsx
+  session/    SessionProvider.tsx, AccountPane.tsx, SignInCard.tsx   ← the only signIn
+  screens/    Home, Opening (1/1b), Challenge (2), Invite (3/5), Round (4/6/7), Receipt (8),
+              Booking (9), Club + Fixture (10–12), Inbox
+  demo/       DemoDrawer.tsx, story.ts (guided script + 12 scenes), clock.ts, autoplay.ts
+  analytics/  events.ts, dau.ts, Panel.tsx
+  ui/         Board.tsx, Replay.tsx, kit.tsx
+tests/        series, round, wallet, consent, engine, fixture, clock, dau
+e2e/          journey.cjs (Playwright walkthrough)
+```
 
-**Analytics.** Each committed player action logs exactly one `player` event; Ahmed's scripted moves log as `demo-opponent`. Consequences are logged as `system` events, such as a reminder delivered or suppressed, an expiry, both players joining, a completed match or an accepted decider. Demo controls log as `demo` and replay views as `replay`. Dates use UTC. `activePlayerDays` counts distinct (player, date) pairs from player actions. A reminder, an acceptance and a match on the same date count as one active day.
-
-## Production handoff (not built here)
-
-- Authenticate both players, and take the capture and result from the authoritative match log.
-- Store agreed UTC windows server-side, check readiness again at join, and hand the private pair to the existing Quick matchmaking.
-- Use idempotent writes keyed by challenge and match IDs, and decide reminder eligibility on the server, respecting mute, block and online-status privacy.
+Deep links are hash routes: `#/invite/<id>`, `#/round/<id>`, `#/fixture/<id>` and `#/receipt/<roundId>`. Opening a link re-checks it against the current state and the signed-in player.

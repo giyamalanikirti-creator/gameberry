@@ -1,9 +1,9 @@
 /*
- * Browser walkthrough of the definition-of-done journeys.
- * Run against a dev or preview server:
+ * Browser walkthrough of the full two-day story, signing in as each player
+ * through the account pane, exactly as a reviewer would.
  *   npm run dev            (or: npm run build && npm run preview -- --port 5173)
  *   BASE_URL=http://localhost:5173 npm run e2e
- * Requires the `playwright` package (preinstalled in many CI images; otherwise `npm i -D playwright`).
+ * Needs the `playwright` package.
  */
 const { chromium } = require('playwright');
 const fs = require('fs');
@@ -12,248 +12,240 @@ const path = require('path');
 const BASE = process.env.BASE_URL || 'http://localhost:5173';
 const OUT = path.join(__dirname, 'screenshots');
 fs.mkdirSync(OUT, { recursive: true });
-
+const PINS = { Gunjan: '1111', Riya: '2222', Ananya: '3333', Shruti: '4444', Dev: '5555' };
 const errors = [];
-let shot = 0;
+let n = 0;
 
-async function snap(page, name) {
-  shot += 1;
-  await page.screenshot({ path: path.join(OUT, `${String(shot).padStart(2, '0')}-${name}.png`), fullPage: true });
+async function shot(page, name) {
+  n += 1;
+  await page.locator('.phone').screenshot({ path: path.join(OUT, `${String(n).padStart(2, '0')}-${name}.png`) });
 }
-
-async function expectText(page, text, timeout = 5000) {
+async function see(page, text, timeout = 6000) {
   await page.getByText(text, { exact: false }).first().waitFor({ state: 'visible', timeout });
 }
-
-async function guide(page, label) {
-  await page.locator('.guide').getByRole('button', { name: label }).click();
+async function tap(page, name, opts = {}) {
+  await page.getByRole('button', { name, exact: !!opts.exact }).first().click();
 }
 
-async function fresh(page) {
-  await page.goto(BASE);
-  await page.evaluate(() => localStorage.clear());
-  await page.reload();
-  await expectText(page, 'Ahmed wins.');
-}
-
-async function noClippedActions(page, label) {
-  const clipped = await page.evaluate(() => {
-    const w = document.documentElement.clientWidth;
-    const bad = [];
-    if (document.documentElement.scrollWidth > w + 1) bad.push(`page scrolls horizontally (${document.documentElement.scrollWidth} > ${w})`);
-    document.querySelectorAll('button').forEach((b) => {
-      const r = b.getBoundingClientRect();
-      if (r.width && (r.left < -1 || r.right > w + 1)) bad.push(`button "${b.textContent.trim()}" clipped`);
-    });
-    return bad;
-  });
-  if (clipped.length) throw new Error(`${label}: ${clipped.join('; ')}`);
-}
-
-async function playMatch(page) {
-  // Kirti rolls and moves; the demo opponent plays Ahmed through the same rules.
-  for (let i = 0; i < 30; i++) {
-    if (await page.getByRole('heading', { name: /wins?\./ }).count()) return;
-    const roll = page.getByRole('button', { name: 'Roll', exact: true });
-    const move = page.getByRole('button', { name: /^Move \d$/ });
-    if (await move.count()) await move.click();
-    else if ((await roll.count()) && (await roll.isEnabled())) await roll.click();
-    await page.waitForTimeout(450);
+/** The only way to change player: the account pane. */
+async function as(page, who) {
+  if (await page.locator('.acct-trigger .tb-name', { hasText: who }).count()) return;
+  await page.locator('.acct-trigger').click();
+  const row = page.locator('.acct', { hasText: who }).first();
+  await row.click();
+  const pin = page.locator('.pin input');
+  if (await pin.isVisible().catch(() => false)) {
+    await pin.fill(PINS[who]);
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   }
-  throw new Error('match did not finish');
+  await page.locator('.scrim').waitFor({ state: 'detached' });
+  await page.locator('.acct-trigger', { hasText: who }).waitFor();
+}
+async function home(page) {
+  await page.locator('.bottom-nav').getByRole('button', { name: 'Home' }).click();
+}
+async function pending(page, label) {
+  await home(page);
+  await page.locator('.todo-row', { hasText: label }).first().click();
+}
+async function playTurn(page, who) {
+  await as(page, who);
+  await pending(page, 'Your turn');
+  await tap(page, 'Roll', { exact: true });
+  const move = page.getByRole('button', { name: /^Move \d$/ });
+  if (await move.isVisible().catch(() => false)) await move.click();
+  await page.waitForTimeout(450);
+}
+async function noClip(page, label) {
+  const bad = await page.evaluate(() => {
+    const out = [];
+    const w = document.documentElement.clientWidth;
+    if (document.documentElement.scrollWidth > w + 1) out.push('horizontal scroll');
+    document.querySelectorAll('.phone button').forEach((b) => {
+      const r = b.getBoundingClientRect();
+      if (r.width && (r.left < -1 || r.right > w + 1)) out.push(`clipped: ${b.textContent.trim()}`);
+    });
+    return out;
+  });
+  if (bad.length) throw new Error(`${label}: ${bad.join(', ')}`);
 }
 
-async function guidedJourney(browser, viewport, tag) {
+async function story(browser, viewport, tag) {
   const page = await browser.newPage({ viewport, deviceScaleFactor: 2 });
   page.on('console', (m) => m.type() === 'error' && errors.push(`${tag}: ${m.text()}`));
   page.on('pageerror', (e) => errors.push(`${tag}: ${e.message}`));
-  await fresh(page);
-
-  // 1. Original result and capture replay
-  await expectText(page, 'Ahmed caught your last token just before safety.');
-  await expectText(page, 'Ahmed 1');
-  await noClippedActions(page, `${tag} result`);
-  await snap(page, `${tag}-result`);
-  await page.getByRole('button', { name: /Watch the capture/ }).click();
-  await page.waitForTimeout(1900);
-  await snap(page, `${tag}-replay-mid`);
-  await page.waitForTimeout(1700);
-  await page.getByRole('button', { name: /Replay/ }).waitFor();
-
-  // 2. Ask for Badla → pending lobby card
-  await page.getByRole('button', { name: 'Ask for Badla' }).click();
-  await expectText(page, 'You challenged Ahmed.');
-  await expectText(page, 'Waiting for Ahmed');
-  await snap(page, `${tag}-kirti-lobby-pending`);
-
-  // 3. Ahmed's invitation, same capture from his side
-  await guide(page, "Try Ahmed's view");
-  await expectText(page, 'Kirti wants a rematch');
-  await expectText(page, "You caught Kirti's last token just before safety.");
-  await snap(page, `${tag}-ahmed-invite`);
-  await page.getByRole('button', { name: 'Tomorrow evening' }).click();
-  await expectText(page, 'Mon 23 Nov, 19:00–19:30');
-  await expectText(page, 'Kirti sees Mon 23 Nov, 19:30–20:00');
-  await snap(page, `${tag}-ahmed-propose`);
-  await page.getByRole('button', { name: 'Suggest this time' }).click();
-  await expectText(page, 'You suggested a time');
-
-  // 4. Kirti confirms
-  await guide(page, "Back to Kirti's view");
-  await expectText(page, 'Ahmed suggested a time');
-  await expectText(page, 'Mon 23 Nov, 19:30–20:00');
-  await expectText(page, '19:00–19:30 for Ahmed');
-  await snap(page, `${tag}-kirti-confirm`);
-  await page.getByRole('button', { name: 'Confirm time' }).click();
-  await expectText(page, 'Scheduled');
-
-  // Reload mid-journey: state survives
+  page.on('request', (r) => { if (!r.url().startsWith(BASE) && !r.url().startsWith('data:')) errors.push(`${tag}: network call to ${r.url()}`); });
+  await page.goto(BASE);
+  await page.evaluate(() => localStorage.clear());
   await page.reload();
-  await expectText(page, 'Agreed by both of you');
+  await see(page, 'Signed out');
+  await see(page, 'Sun 22 Nov, 8:14 pm IST');
 
-  // 5. Next day
-  await guide(page, 'Advance to agreed time');
-  await expectText(page, 'window is open');
-  await guide(page, "Try Ahmed's view");
-  await page.getByRole('button', { name: "I'm ready" }).click();
-  await expectText(page, 'Waiting for Kirti');
-  await snap(page, `${tag}-ahmed-ready`);
+  // Day 1 — screen 1: Riya's opening result
+  await as(page, 'Riya');
+  await tap(page, /Take Badla/);
+  await see(page, 'Gunjan caught you one square from home.', 8000);
+  await shot(page, `${tag}-01-opening`);
+  await noClip(page, 'opening');
+  await tap(page, 'Take Badla', { exact: true });
+  // Screen 2: challenge sheet
+  await see(page, 'Badla Doubles · You pay 100 · Win 200 back');
+  await shot(page, `${tag}-02-challenge`);
+  await tap(page, /Send to Gunjan/);
+  await see(page, 'This invitation is for Gunjan');
+  await see(page, 'Waiting for Gunjan to accept');
 
-  // 6. Kirti gets exactly one reminder
-  await guide(page, "Back to Kirti's view");
-  await expectText(page, 'Ahmed is ready for your Badla match.');
-  await snap(page, `${tag}-kirti-reminder`);
-  await page.locator('.push-body').click();
-  await expectText(page, 'Ahmed is at the table');
-  await page.getByRole('button', { name: 'Join match' }).click();
+  // Screen 3: Gunjan receives it in her own session
+  await as(page, 'Gunjan');
+  await pending(page, 'Badla challenge');
+  await see(page, 'Riya wants Badla.');
+  await shot(page, `${tag}-03-received`);
+  await tap(page, /Accept · 100 gold/);
+  // Screen 4: seat board
+  await see(page, '2 of 4 seats filled');
+  await tap(page, 'Invite a partner');
+  await tap(page, 'Invite Shruti');
+  await as(page, 'Riya');
+  await home(page);
+  await tap(page, 'Open round');
+  await tap(page, 'Invite a partner');
+  await tap(page, 'Invite Ananya');
+  await shot(page, `${tag}-04-seats`);
 
-  // 7. Rematch, played through the engine
-  await expectText(page, 'Your turn. Roll the die.');
-  await noClippedActions(page, `${tag} match`);
-  await snap(page, `${tag}-match-start`);
-  await page.getByRole('button', { name: 'Roll', exact: true }).click();
-  await expectText(page, 'You rolled 2');
-  await page.reload(); // rolled-but-unspent die resumes
-  await expectText(page, 'You rolled 2');
-  await playMatch(page);
+  // Screen 5: partner invitations, each in their own session
+  await as(page, 'Ananya');
+  await pending(page, 'Partner invitation');
+  await see(page, 'Riya is down 0-1 to Gunjan. Join her side?');
+  await see(page, 'Entry');
+  await shot(page, `${tag}-05-partner`);
+  await tap(page, /Join Riya's side/);
+  await as(page, 'Shruti');
+  await pending(page, 'Partner invitation');
+  await see(page, 'Gunjan is 1-0 up on Riya');
+  await tap(page, /Join Gunjan's side/);
 
-  // 8. One each
-  await expectText(page, 'You win.');
-  await expectText(page, 'One each. Play the decider?');
-  await expectText(page, 'Kirti brought her last token home first.'.replace('Kirti brought her', 'You brought your'));
-  await noClippedActions(page, `${tag} rivalry`);
-  await snap(page, `${tag}-one-each`);
+  // Screen 6: waiting table, Ready per seat
+  await see(page, 'Waiting table');
+  await see(page, /left/);
+  await tap(page, /Ready · 100 gold/);
+  await shot(page, `${tag}-06-table`);
+  for (const who of ['Ananya', 'Gunjan', 'Riya']) {
+    await as(page, who);
+    await pending(page, 'Ready up');
+    await tap(page, /Ready · 100 gold/);
+  }
 
-  // 9. Decider requires Ahmed's acceptance
-  await page.getByRole('button', { name: 'Play the decider' }).click();
-  await expectText(page, 'You asked Ahmed for the decider.');
-  await guide(page, "Try Ahmed's view");
-  await expectText(page, 'Kirti wants the decider');
-  await page.getByRole('button', { name: 'Play now' }).click();
-  await guide(page, "Back to Kirti's view");
-  await page.locator('.push-body').click();
-  await page.getByRole('button', { name: 'Join match' }).click();
-  await expectText(page, 'Match 3');
-  await snap(page, `${tag}-decider-started`);
+  // Screen 7: the Doubles endgame, each seat on its own turn
+  await see(page, 'Quick endgame · demo variant');
+  await shot(page, `${tag}-07-endgame`);
+  await noClip(page, 'endgame');
+  await playTurn(page, 'Riya');
+  await playTurn(page, 'Gunjan');
+  await as(page, 'Ananya');
+  await pending(page, 'Your turn');
+  await see(page, 'you need exactly 2');
+  await tap(page, 'Roll', { exact: true });
+  await tap(page, /^Move 2$/);
+  await see(page, 'Riya & Ananya win');
+
+  // Screen 8: personal receipts
+  await tap(page, 'See your result');
+  await see(page, /You helped Riya take it to 1.1/);
+  await shot(page, `${tag}-08-assist`);
+  await tap(page, 'Save my seat for the decider');
+  await as(page, 'Shruti');
+  await pending(page, 'Result receipt');
+  await see(page, 'One each. Defend the series with Gunjan?');
+
+  // Screen 9: book the decider
+  await as(page, 'Riya');
+  await pending(page, 'Result receipt');
+  await tap(page, 'Host Grudge Night');
+  await tap(page, /Offer this slot/);
+  await see(page, 'Waiting for Gunjan to choose a slot');
+  await as(page, 'Gunjan');
+  await home(page);
+  await page.locator('.todo-row').first().click();
+  await tap(page, /Choose · confirm 100 gold/);
+  await see(page, '2 of 4 confirmed');
+  await shot(page, `${tag}-09-booking`);
+  for (const who of ['Ananya', 'Shruti']) {
+    await as(page, who);
+    await pending(page, 'Confirm booking');
+    await tap(page, /Confirm · 100 gold entry/);
+  }
+  await see(page, '4 of 4 confirmed');
+
+  // Screens 10–11: club fixture, Dev picks
+  await as(page, 'Dev');
+  await see(page, 'Gunjan & Shruti');
+  await see(page, 'Pick a side');
+  await shot(page, `${tag}-10-fixture`);
+  await page.locator('.fixture .seg button', { hasText: 'Riya & Ananya' }).first().click();
+  await see(page, 'Your pick is in. Result tomorrow.');
+  await page.reload(); // the pick persists
+  await see(page, 'Your pick is in. Result tomorrow.');
+
+  // Screen 12: match day
+  await page.getByRole('button', { name: 'Demo controls' }).click();
+  await tap(page, "Jump to tomorrow's slot");
+  await page.keyboard.press('Escape');
+  await see(page, 'Mon 23 Nov, 9:00 pm IST');
+  await see(page, 'Predictions locked');
+  for (const who of ['Riya', 'Gunjan', 'Ananya', 'Shruti']) {
+    await as(page, who);
+    await pending(page, 'Ready up');
+    await tap(page, /Ready · 100 gold/);
+  }
+  for (const who of ['Riya', 'Gunjan', 'Ananya', 'Shruti']) await playTurn(page, who);
+  await see(page, 'Gunjan & Shruti win');
+  await tap(page, 'See your result');
+  await see(page, /Gunjan & Shruti win the series 2.1/);
+  await as(page, 'Dev');
+  await page.locator('.bottom-nav').getByRole('button', { name: 'Club' }).click();
+  await see(page, 'Gunjan & Shruti win the series');
+  await see(page, 'You picked Riya & Ananya. Not this time.');
+  await shot(page, `${tag}-12-club-result`);
+
+  // Ledger: the checkpoint balances, total 5,000
+  await page.getByRole('button', { name: 'Demo controls' }).click();
+  const ledger = await page.locator('.ledger').innerText();
+  for (const v of ['Gunjan\t1,100', 'Riya\t900', 'Ananya\t1,000', 'Shruti\t1,000', 'Dev\t1,000', 'Total\t5,000']) {
+    if (!ledger.includes(v)) throw new Error(`ledger missing ${v}:\n${ledger}`);
+  }
+  await page.keyboard.press('Escape');
+  await page.screenshot({ path: path.join(OUT, `${tag}-full.png`), fullPage: false });
   await page.close();
 }
 
-async function playNowJourney(browser) {
+async function wrongSession(browser) {
   const page = await browser.newPage({ viewport: { width: 360, height: 740 } });
-  page.on('console', (m) => m.type() === 'error' && errors.push(`playnow: ${m.text()}`));
-  await fresh(page);
-  await page.getByRole('button', { name: 'Ask for Badla' }).click();
-  await guide(page, "Try Ahmed's view");
-  await page.getByRole('button', { name: 'Play now' }).click();
-  await expectText(page, 'Waiting for Kirti');
-  await guide(page, "Back to Kirti's view");
-  await page.locator('.push-body').click();
-  await page.getByRole('button', { name: 'Join match' }).click();
-  await expectText(page, 'Your turn. Roll the die.');
-  await playMatch(page);
-  await expectText(page, 'One each. Play the decider?');
-  await page.close();
-}
-
-async function passAndWithdraw(browser) {
-  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
-  await fresh(page);
-  await page.getByRole('button', { name: 'Ask for Badla' }).click();
-  await page.getByRole('button', { name: 'Withdraw' }).click();
-  await expectText(page, 'You withdrew your invitation.');
-  if (await page.getByText('Waiting for Ahmed').count()) throw new Error('pending card survived withdraw');
-
-  await fresh(page);
-  await page.getByRole('button', { name: 'Ask for Badla' }).click();
-  await guide(page, "Try Ahmed's view");
-  await page.getByRole('button', { name: 'Pass' }).click();
-  await guide(page, 'Reset demo').catch(() => {});
-  await page.close();
-}
-
-async function missedAndStale(browser) {
-  const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
-  page.on('console', (m) => m.type() === 'error' && errors.push(`missed: ${m.text()}`));
-  await fresh(page);
-  await page.getByRole('button', { name: 'Ask for Badla' }).click();
-  await guide(page, "Try Ahmed's view");
-  await page.getByRole('button', { name: 'Tomorrow evening' }).click();
-  await page.getByRole('button', { name: 'Suggest this time' }).click();
-  await guide(page, "Back to Kirti's view");
-  await page.getByRole('button', { name: 'Confirm time' }).click();
-  await guide(page, 'Advance to agreed time');
-  await guide(page, "Try Ahmed's view");
-  await page.getByRole('button', { name: "I'm ready" }).click();
-  await guide(page, "Back to Kirti's view");
-  await expectText(page, 'Ahmed is ready for your Badla match.');
-  // Let the window close with only Ahmed ready, then tap the stale reminder.
-  await page.getByRole('button', { name: /Demo controls/ }).click();
-  await snap(page, 'demo-controls');
-  await page.getByRole('button', { name: '+1 h' }).click();
-  await page.getByRole('tab', { name: /Notification inbox/ }).click();
-  await page.locator('.inbox-item').first().click();
-  await expectText(page, 'That table has closed');
-  await expectText(page, 'You missed each other');
-  await expectText(page, 'No score change');
-  await snap(page, 'missed-each-other');
-  if (await page.getByRole('button', { name: 'Join match' }).count()) throw new Error('stale reminder revived the table');
-  await page.close();
-}
-
-async function reducedMotionAndCorruptData(browser) {
-  const ctx = await browser.newContext({ viewport: { width: 360, height: 740 }, reducedMotion: 'reduce', deviceScaleFactor: 2 });
-  const page = await ctx.newPage();
-  page.on('console', (m) => m.type() === 'error' && errors.push(`reduced: ${m.text()}`));
-  await fresh(page);
-  await expectText(page, 'Reduced motion: showing before and after frames.');
-  await noClippedActions(page, 'reduced 360');
-  await snap(page, 'reduced-motion-360');
-  await page.evaluate(() => localStorage.setItem('badla-demo', '{"version":1,"domain":{}}'));
+  page.on('console', (m) => m.type() === 'error' && errors.push(`wrong-session: ${m.text()}`));
+  await page.goto(BASE);
+  await page.evaluate(() => localStorage.clear());
   await page.reload();
-  await page.getByRole('alertdialog').waitFor();
-  await page.getByRole('button', { name: 'Reset demo' }).click();
-  await expectText(page, 'Ahmed wins.');
-  await ctx.close();
+  await page.getByRole('button', { name: 'Demo controls' }).click();
+  await page.locator('.drawer select').nth(1).selectOption('5');
+  await page.keyboard.press('Escape');
+  await as(page, 'Riya');
+  // Deep link to Ananya's invitation from Riya's session: read-only
+  const id = await page.evaluate(() => Object.values(JSON.parse(localStorage.getItem('badla.v1')).state.invites).find((i) => i.toPlayerId === 'ananya').id);
+  await page.evaluate((x) => { window.location.hash = `#/invite/${x}`; }, id);
+  await see(page, 'This invitation is for Ananya');
+  if (await page.getByRole('button', { name: /Join Riya's side/ }).count()) throw new Error('wrong session could accept');
+  await noClip(page, '360 invite');
+  await page.close();
 }
 
 (async () => {
   const browser = await chromium.launch();
   try {
-    await guidedJourney(browser, { width: 390, height: 844 }, 'mobile');
-    await guidedJourney(browser, { width: 1280, height: 860 }, 'desktop');
-    await playNowJourney(browser);
-    await passAndWithdraw(browser);
-    await missedAndStale(browser);
-    await reducedMotionAndCorruptData(browser);
+    await story(browser, { width: 390, height: 844 }, 'mobile');
+    await story(browser, { width: 1360, height: 960 }, 'desktop');
+    await wrongSession(browser);
   } finally {
     await browser.close();
   }
-  if (errors.length) {
-    console.error('Console errors:\n' + errors.join('\n'));
-    process.exit(1);
-  }
+  if (errors.length) { console.error(errors.join('\n')); process.exit(1); }
   console.log(`All journeys passed. Screenshots in ${OUT}`);
-})().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+})().catch((e) => { console.error(e); process.exit(1); });

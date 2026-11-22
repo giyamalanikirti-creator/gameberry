@@ -8,14 +8,13 @@ export const MINUTE = 60_000;
 export const HOUR = 60 * MINUTE;
 export const DAY = 24 * HOUR;
 
-/** Demo seed: 22 November 2026, 14:00 UTC. */
-export const DEMO_START = Date.UTC(2026, 10, 22, 14, 0, 0);
+/** Demo seed: 22 November 2026, 8:14 pm IST (14:44 UTC). */
+export const DEMO_START = Date.UTC(2026, 10, 22, 14, 44, 0);
 
 export const INVITE_TTL = DAY;
-export const PROPOSAL_TTL = DAY;
-export const READY_TTL = 5 * MINUTE;
 export const PLAY_NOW_WINDOW = 5 * MINUTE;
 export const WINDOW_LENGTH = 30 * MINUTE;
+export const SERIES_TTL = 7 * DAY;
 
 /** Start-inclusive, end-exclusive. */
 export function inWindow(w: TimeWindow, at: number): boolean {
@@ -92,23 +91,45 @@ export function tomorrowWindow(now: number, timeZone: string, hour: number, minu
   return { start, end: start + WINDOW_LENGTH };
 }
 
-/** "Tomorrow evening": 19:00–19:30 in the proposer's zone. */
-export function defaultEveningWindow(now: number, timeZone: string): TimeWindow {
-  return tomorrowWindow(now, timeZone, 19, 0);
+/** Local calendar date key, e.g. 2026-11-22, in a zone. */
+export function localDateKey(at: number, timeZone: string): string {
+  const p = zonedParts(at, timeZone);
+  return `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
 }
 
-export const EVENING_SLOTS: Array<[number, number]> = [
-  [18, 0],
-  [18, 30],
-  [19, 0],
-  [19, 30],
-  [20, 0],
-  [20, 30],
-  [21, 0],
-];
+/** End of tomorrow in the zone (exclusive), the latest a decider slot may start. */
+export function endOfTomorrow(now: number, timeZone: string): number {
+  const [y, m, d] = tomorrowIn(now, timeZone);
+  return zonedTimeToUtc(y, m, d, 23, 59, timeZone) + MINUTE;
+}
 
+/** "9:00 pm" */
 export function formatTime(at: number, timeZone: string): string {
-  return new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(at);
+  return new Intl.DateTimeFormat('en-IN', { timeZone, hour: 'numeric', minute: '2-digit', hour12: true }).format(at).replace(/\s?([ap])\.?m\.?/i, (_, x: string) => ` ${x.toLowerCase()}m`);
+}
+
+/** "IST" style short zone name. */
+export function zoneShort(at: number, timeZone: string): string {
+  const p = new Intl.DateTimeFormat('en-US', { timeZone, timeZoneName: 'short' }).formatToParts(at).find((x) => x.type === 'timeZoneName');
+  const v = p?.value ?? timeZone;
+  return v === 'GMT+5:30' ? 'IST' : v;
+}
+
+/** "Today", "Tomorrow" or the weekday + date, relative to now in the zone. */
+export function relativeDay(at: number, now: number, timeZone: string): string {
+  const k = localDateKey(at, timeZone);
+  if (k === localDateKey(now, timeZone)) return 'Today';
+  const [y, m, d] = tomorrowIn(now, timeZone);
+  if (k === `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`) return 'Tomorrow';
+  return formatDay(at, timeZone);
+}
+
+/** "Tomorrow 9:00–9:30 pm" */
+export function formatSlot(w: TimeWindow, now: number, timeZone: string): string {
+  const a = formatTime(w.start, timeZone);
+  const b = formatTime(w.end, timeZone);
+  const sameHalf = a.slice(-2) === b.slice(-2);
+  return `${relativeDay(w.start, now, timeZone)} ${sameHalf ? a.slice(0, -3) : a}–${b}`;
 }
 
 export function formatDay(at: number, timeZone: string): string {
@@ -117,6 +138,11 @@ export function formatDay(at: number, timeZone: string): string {
 
 export function formatDateTime(at: number, timeZone: string): string {
   return `${formatDay(at, timeZone)}, ${formatTime(at, timeZone)}`;
+}
+
+/** Top-bar clock: "Sun 22 Nov, 8:14 pm IST" */
+export function formatClock(at: number, timeZone: string): string {
+  return `${formatDay(at, timeZone).replace(',', '')}, ${formatTime(at, timeZone)} ${zoneShort(at, timeZone)}`;
 }
 
 /** e.g. "Mon 23 Nov, 19:30–20:00". */
