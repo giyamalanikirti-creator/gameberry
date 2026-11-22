@@ -13,7 +13,7 @@ The page shows **one phone** and a short explanation beside it. Every phone scre
 
 ## The story (19 steps, about 3 minutes)
 
-The demo opens on an original loading screen (stage curtain, lights, a bouncing die). The look borrows the game's general palette: purple patterned backdrop, magenta panels with gold borders, gold buttons and a bright four-colour board on a wooden frame. All artwork is original: no Ludo STAR logo, mascots or crown art.
+The demo opens on a "Ludo Star · Badla" loading screen modelled on the game's own (stage curtain, bunting, lights, star, dice, board, coins, green loading bar), redrawn in original artwork. The look borrows the game's general palette: purple patterned backdrop, magenta panels with gold borders, gold buttons and a bright four-colour board on a wooden frame. All artwork is original: no Ludo STAR logo, mascots or crown art.
 
 | # | Phone | What happens |
 |---|---|---|

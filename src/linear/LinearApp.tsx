@@ -295,25 +295,57 @@ function Screen({ step, s, clock, onCta }: { step: Step; s: State; clock: number
   }
 }
 
-/** Original loading screen: curtain, lights, a bouncing die and a progress bar. */
+const LETTER_COLORS = ['#ff4b4b', '#ffd23f', '#38d36a', '#3fa8ff'];
+
+function Die({ x, y, size, rot, pips }: { x: string; y: string; size: number; rot: number; pips: number[][] }) {
+  return (
+    <svg className="sp-die" style={{ left: x, top: y, width: size, height: size, transform: `rotate(${rot}deg)` }} viewBox="-12 -12 24 24" aria-hidden="true">
+      <rect x="-10" y="-10" width="20" height="20" rx="5" fill="#ffe9d6" stroke="#f0a86a" strokeWidth="1.2" />
+      <rect x="-10" y="-10" width="20" height="8" rx="4" fill="#fff6ee" opacity="0.7" />
+      {pips.map(([px, py]) => <circle key={`${px}${py}`} cx={px} cy={py} r="2" fill="#e8463c" />)}
+    </svg>
+  );
+}
+
+/** Loading screen in the spirit of the game's own: stage, lights, dice, board, coins. Artwork is original. */
 function Splash({ onDone, label }: { onDone: () => void; label: string }) {
   const [pct, setPct] = useState(0);
   const ref = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (pct >= 100) { ref.current?.focus({ preventScroll: true }); return; }
-    const t = setTimeout(() => setPct((p) => Math.min(100, p + 7)), 90);
+    const t = setTimeout(() => setPct((p) => Math.min(100, p + 6)), 90);
     return () => clearTimeout(t);
   }, [pct]);
   return (
     <div className="splash">
-      <div className="splash-lights" aria-hidden="true">{Array.from({ length: 14 }, (_, k) => <span key={k} />)}</div>
-      <div className="splash-sparkles" aria-hidden="true"><span>✦</span><span>★</span><span>✦</span><span>◆</span></div>
-      <h1 className="splash-title"><span className="st-ludo">Ludo</span><span className="st-badla">Badla</span></h1>
-      <svg className="splash-die" viewBox="-12 -12 24 24" aria-hidden="true">
-        <rect x="-10" y="-10" width="20" height="20" rx="5" fill="#fff4e6" stroke="#e9b36a" strokeWidth="1" />
-        {[[-5, -5], [5, -5], [0, 0], [-5, 5], [5, 5]].map(([x, y]) => <circle key={`${x}${y}`} cx={x} cy={y} r="2" fill="#e63a35" />)}
-      </svg>
-      <div className="splash-board" aria-hidden="true"><span className="q g" /><span className="q y" /><span className="q r" /><span className="q b" /></div>
+      <div className="sp-drape sp-drape-l" aria-hidden="true" />
+      <div className="sp-drape sp-drape-r" aria-hidden="true" />
+      <div className="sp-swag" aria-hidden="true" />
+      <div className="sp-bunting" aria-hidden="true">{Array.from({ length: 9 }, (_, k) => <span key={k} />)}</div>
+      <div className="splash-lights" aria-hidden="true">{Array.from({ length: 16 }, (_, k) => <span key={k} />)}</div>
+      <div className="sp-starpanel" aria-hidden="true" />
+      <div className="splash-sparkles" aria-hidden="true"><span>★</span><span>✦</span><span>★</span><span>◆</span><span>✦</span></div>
+
+      <h1 className="splash-title">
+        <span className="sp-ludo">{'LUDO'.split('').map((ch, k) => <span key={k} style={{ color: LETTER_COLORS[k] }}>{ch}</span>)}</span>
+        <span className="sp-star">STAR</span>
+        <span className="sp-badla">BADLA</span>
+      </h1>
+
+      <Die x="50%" y="300px" size={96} rot={-12} pips={[[-5, -5], [5, -5], [0, 0], [-5, 5], [5, 5]]} />
+      <Die x="6%" y="400px" size={58} rot={18} pips={[[-5, -5], [5, 5], [0, 0]]} />
+      <Die x="76%" y="410px" size={54} rot={-20} pips={[[-5, -5], [5, -5], [-5, 5], [5, 5]]} />
+      <span className="sp-heart" aria-hidden="true">❤</span>
+
+      <div className="sp-table" aria-hidden="true">
+        <div className="splash-board">
+          <span className="q g" /><span className="q y" /><span className="q r" /><span className="q b" />
+          <i className="tok t1" /><i className="tok t2" /><i className="tok t3" /><i className="tok t4" />
+        </div>
+        <div className="sp-coins">{Array.from({ length: 18 }, (_, k) => <span key={k} style={{ left: `${(k * 53) % 100}%`, bottom: `${(k % 4) * 9}px` }} />)}</div>
+        <span className="sp-gem g1" /><span className="sp-gem g2" />
+      </div>
+
       <div className="splash-bottom">
         {pct < 100 ? (
           <>
@@ -323,7 +355,7 @@ function Splash({ onDone, label }: { onDone: () => void; label: string }) {
         ) : (
           <button ref={ref} type="button" className="btn btn-ember btn-big lin-cta" onClick={onDone}>{label}</button>
         )}
-        <p className="splash-tag">One capture can start a rivalry</p>
+        <p className="splash-tag">One capture can turn a stranger into your rival</p>
       </div>
     </div>
   );
