@@ -12,6 +12,7 @@
  */
 
 export type Color = 'red' | 'yellow';
+export type BoardColor = Color | 'green' | 'blue';
 export type Quadrant = 'tl' | 'tr' | 'br' | 'bl';
 
 export interface Cell {
@@ -27,8 +28,8 @@ export const LANE_LENGTH = 5;
 export const FINISH_INDEX = 56;
 export const YARD = -1;
 
-/** Active colours in this two-player concept and the yard each one owns. */
-export const COLOR_QUADRANT: Record<Color, Quadrant> = { red: 'bl', yellow: 'tr' };
+/** The yard each colour owns. */
+export const COLOR_QUADRANT: Record<BoardColor, Quadrant> = { red: 'bl', yellow: 'tr', green: 'tl', blue: 'br' };
 
 /** Index in LOOP where each quadrant's start square sits. */
 export const START_OFFSET: Record<Quadrant, number> = { tl: 0, tr: 13, br: 26, bl: 39 };
@@ -88,19 +89,21 @@ export const YARD_ORIGIN: Record<Quadrant, Cell> = {
   bl: { r: 9, c: 0 },
 };
 
-export function quadrantOf(color: Color): Quadrant {
+export function quadrantOf(color: BoardColor): Quadrant {
   return COLOR_QUADRANT[color];
 }
 
 /** Full ordered route for a colour: 51 track squares, 5 lane squares, finish. */
-export function route(color: Color): Cell[] {
+export function route(color: BoardColor): Cell[] {
   const q = quadrantOf(color);
   const offset = START_OFFSET[q];
   const track = range(0, LAST_TRACK_INDEX).map((i) => LOOP[(offset + i) % TRACK_LENGTH]);
   return [...track, ...LANES[q], FINISH_CELL[q]];
 }
 
-export const ROUTES: Record<Color, Cell[]> = { red: route('red'), yellow: route('yellow') };
+export const ROUTES: Record<BoardColor, Cell[]> = {
+  red: route('red'), yellow: route('yellow'), green: route('green'), blue: route('blue'),
+};
 
 /** Loop index of a route position on the shared track, or null if not on it. */
 export function loopIndexOf(color: Color, pos: number): number | null {
@@ -167,7 +170,7 @@ export function cellCenter(cell: Cell): { x: number; y: number } {
 }
 
 /** Four token spots inside a yard. */
-export function yardSpots(color: Color): Array<{ x: number; y: number }> {
+export function yardSpots(color: BoardColor): Array<{ x: number; y: number }> {
   const o = YARD_ORIGIN[quadrantOf(color)];
   return [
     { x: o.c + 2, y: o.r + 2 },
@@ -178,7 +181,7 @@ export function yardSpots(color: Color): Array<{ x: number; y: number }> {
 }
 
 /** Where finished tokens rest, kept visible inside the colour's centre triangle. */
-export function finishSpots(color: Color): Array<{ x: number; y: number }> {
+export function finishSpots(color: BoardColor): Array<{ x: number; y: number }> {
   const q = quadrantOf(color);
   const spread = [-0.55, 0, 0.55, 0.27];
   switch (q) {

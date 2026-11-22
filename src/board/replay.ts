@@ -7,18 +7,18 @@ import { Color, YARD } from './geometry';
 
 export type PlayerRef = 'kirti' | 'ahmed';
 
-export interface ReplayEvent {
+export interface ReplayEvent<Actor extends string = PlayerRef> {
   id: string;
   matchId: string;
   kind: 'capture' | 'finish';
-  actor: PlayerRef;
+  actor: Actor;
   color: Color;
   tokenIndex: number;
   roll: number;
   before: Tokens;
   /** Route positions of the moving token, one per step. */
   path: number[];
-  capture: (Capture & { player: PlayerRef; to: typeof YARD }) | null;
+  capture: (Capture & { player: Actor; to: typeof YARD }) | null;
   after: Tokens;
 }
 
@@ -60,7 +60,7 @@ export interface FrameCopy {
 }
 
 /** Roughly three seconds: focus, three steps, impact, send-home, final frame. */
-export function buildFrames(event: ReplayEvent, copy: FrameCopy): ReplayFrame[] {
+export function buildFrames<Actor extends string>(event: ReplayEvent<Actor>, copy: FrameCopy): ReplayFrame[] {
   const frames: ReplayFrame[] = [];
   const focusTarget = event.capture
     ? { color: event.capture.color, tokenIndex: event.capture.tokenIndex }

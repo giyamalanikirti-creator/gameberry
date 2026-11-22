@@ -1,6 +1,6 @@
 import { KeyboardEvent, useMemo } from 'react';
-import type { Tokens } from '../../board/engine';
 import {
+  BoardColor,
   Color,
   FINISH_INDEX,
   LANES,
@@ -33,30 +33,30 @@ const START_QUAD: Record<number, Quadrant> = Object.fromEntries(
 );
 
 export interface BoardProps {
-  tokens: Tokens;
+  tokens: Partial<Record<BoardColor, number[]>>;
   perspective: Color;
-  names: Record<Color, string>;
+  names: Partial<Record<BoardColor, string>>;
   label: string;
-  focus?: Array<{ color: Color; tokenIndex: number }>;
-  impact?: { color: Color; pos: number } | null;
-  movable?: { color: Color; tokens: number[]; steps: number; onMove: (i: number) => void } | null;
+  focus?: Array<{ color: BoardColor; tokenIndex: number }>;
+  impact?: { color: BoardColor; pos: number } | null;
+  movable?: { color: BoardColor; tokens: number[]; steps: number; onMove: (i: number) => void } | null;
   animate?: boolean;
   compact?: boolean;
 }
 
 interface Placed {
-  color: Color;
+  color: BoardColor;
   index: number;
   x: number;
   y: number;
   r: number;
 }
 
-function placeTokens(tokens: Tokens): Placed[] {
+function placeTokens(tokens: BoardProps['tokens']): Placed[] {
   const placed: Placed[] = [];
-  const byCell = new Map<string, Array<{ color: Color; index: number }>>();
-  (['red', 'yellow'] as Color[]).forEach((color) => {
-    tokens[color].forEach((pos, index) => {
+  const byCell = new Map<string, Array<{ color: BoardColor; index: number }>>();
+  (Object.keys(tokens) as BoardColor[]).forEach((color) => {
+    tokens[color]?.forEach((pos, index) => {
       if (pos === YARD) {
         placed.push({ color, index, ...yardSpots(color)[index], r: 0.42 });
       } else if (pos === FINISH_INDEX) {
@@ -91,8 +91,19 @@ function Star({ x, y, light }: { x: number; y: number; light?: boolean }) {
   return <polygon points={pts.join(' ')} className={light ? 'board-star board-star-light' : 'board-star'} />;
 }
 
-/** Original coin-style pawn. Kirti's is round, Ahmed's is a rounded diamond, so colour is never the only cue. */
-function TokenShape({ color, r }: { color: Color; r: number }) {
+/** Original coin-style pawns with one shape per yard. */
+function TokenShape({ color, r }: { color: BoardColor; r: number }) {
+  if (color === 'green' || color === 'blue') {
+    const s = r * 1.12;
+    const points = color === 'green' ? `0,${-s} ${s},${s * 0.72} ${-s},${s * 0.72}`
+      : `${-r},${-r} ${r},${-r} ${r},${r} ${-r},${r}`;
+    return (
+      <>
+        <polygon points={points} transform="translate(0 0.1)" className="token-base" strokeLinejoin="round" />
+        <polygon points={points} className={`token-shape token-${color}`} strokeLinejoin="round" />
+      </>
+    );
+  }
   if (color === 'yellow') {
     const s = r * 1.15;
     return (
@@ -115,7 +126,7 @@ export function Board({ tokens, perspective, names, label, focus = [], impact, m
   const placed = useMemo(() => placeTokens(tokens), [tokens]);
 
   const impactPoint = impact ? cellCenter(ROUTES[impact.color][impact.pos]) : null;
-  const isFocus = (c: Color, i: number) => focus.some((f) => f.color === c && f.tokenIndex === i);
+  const isFocus = (c: BoardColor, i: number) => focus.some((f) => f.color === c && f.tokenIndex === i);
 
   const onKey = (e: KeyboardEvent, i: number) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -128,7 +139,7 @@ export function Board({ tokens, perspective, names, label, focus = [], impact, m
     <svg
       viewBox="-0.35 -0.35 15.7 15.7"
       className={`board${compact ? ' board-compact' : ''}${animate ? '' : ' board-still'}`}
-      role="img"
+      role={movable ? 'group' : 'img'}
       aria-label={label}
     >
       <defs>
@@ -198,7 +209,7 @@ export function Board({ tokens, perspective, names, label, focus = [], impact, m
         {placed.map((t) => {
           const canMove = movable && movable.color === t.color && movable.tokens.includes(t.index);
           const focused = isFocus(t.color, t.index);
-          const name = names[t.color];
+          const name = names[t.color] ?? t.color;
           const common = {
             className: `token${canMove ? ' token-movable' : ''}${focused ? ' token-focus' : ''}`,
             style: { transform: `translate(${t.x}px, ${t.y}px)` },
@@ -223,6 +234,7 @@ export function Board({ tokens, perspective, names, label, focus = [], impact, m
                 onClick={() => movable!.onMove(t.index)}
                 onKeyDown={(e) => onKey(e, t.index)}
               >
+                <circle r={0.85} fill="transparent" />
                 {body}
               </g>
             );

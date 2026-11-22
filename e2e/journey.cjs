@@ -9,7 +9,8 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
 
-const BASE = process.env.BASE_URL || 'http://localhost:5173';
+const BASE = new URL(process.env.BASE_URL || 'http://localhost:5173');
+BASE.searchParams.set('classic', '1');
 const OUT = path.join(__dirname, 'screenshots');
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -30,7 +31,7 @@ async function guide(page, label) {
 }
 
 async function fresh(page) {
-  await page.goto(BASE);
+  await page.goto(BASE.href);
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   await expectText(page, 'Ahmed wins.');
@@ -237,7 +238,7 @@ async function reducedMotionAndCorruptData(browser) {
 }
 
 (async () => {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH });
   try {
     await guidedJourney(browser, { width: 390, height: 844 }, 'mobile');
     await guidedJourney(browser, { width: 1280, height: 860 }, 'desktop');

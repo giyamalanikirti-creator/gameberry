@@ -1,4 +1,55 @@
-# Badla for Ludo STAR: playable concept
+# Badla Doubles and Grudge Night
+
+A mobile-first, single-device Ludo prototype. Start from a settled singles result, play a first-to-two Badla series, and book a club decider if the same four players share a club. Every role is fictional. Invitations, reminders, club cards, predictions, product events and gold live on the current device.
+
+## Run the prototype
+
+Use Node 24 or newer.
+
+```bash
+npm ci
+npm run dev
+npm run typecheck
+npm test
+npm run build
+npm run preview
+```
+
+The default route opens the series demo. **Demo controls → Open original singles demo** opens the earlier two-player flow, also available at `?classic=1`. Each demo uses a separate versioned local-storage key, so an existing singles session remains accessible. Use one browser tab per walkthrough.
+
+## The guided two-day story
+
+1. As **Riya**, replay Gunjan's legal capture on the opening result. Tap **Take Badla → Bring backup · 2v2 → Play now → Send challenge**. Use **Continue as Gunjan** and accept his invitation as Gunjan.
+2. Invite **Shruti** on Gunjan's side and **Ananya** on Riya's side. Switch to each partner to accept. Every player then taps **Ready**. Use **Continue as** or the **View as** buttons inside Demo controls to reach any outstanding seat.
+3. Roll and tap the highlighted token as **Riya**, **Gunjan**, then **Ananya**. Tap **View result** after seeing Ananya bring her token home. Her receipt shows +200 from the pot and +100 net. Save her seat for the decider and continue as either captain.
+4. Tap **Host Grudge Night**, offer tomorrow's slot (with an optional second slot), and switch to the other captain to choose it. All four individually confirm the selected time, 100-gold entry and club visibility. The fourth confirmation publishes the fixture.
+5. Continue as **Dev**, open the club fixture and pick a side. You can change the pick until the slot starts. Use **Demo controls → Advance to scheduled start**. Switch to a participant and use **Open your table** from the fixture or the lobby. Each of the four players checks in separately.
+6. Play the decider in order **Riya → Gunjan → Ananya → Shruti**. Open the result as Dev to see the actual winners, both prediction counts and your verdict. Captains and partners can open their own receipts from the lobby.
+
+With the bonus disabled, the balance changes are:
+
+| Stage | Gunjan | Riya | Ananya | Shruti | Dev |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Opening settled | 1,100 | 900 | 1,000 | 1,000 | 1,000 |
+| After the comeback | 1,000 | 1,000 | 1,100 | 900 | 1,000 |
+| After the decider | 1,100 | 900 | 1,000 | 1,000 | 1,000 |
+
+### Demo controls and other paths
+
+- **Identity and consent.** Role switching and opening a local inbox card only change the view. Each confirmation and check-in is a separate action by that player. Saving a seat records interest in the decider and carries no gold.
+- **Time.** The running demo clock begins at 19:30 IST on 22 November 2026. Use the drawer to jump to a scheduled start, skip to the window close, or advance in increments. Slots are stored as UTC instants and displayed in IST for the seeded players. Check-in includes the start and excludes the end. Immediate tables have five minutes. Scheduled tables have 30 minutes.
+- **Board.** The Quick endgame starts each player with one pawn in their protected lane and requires an exact roll to finish. The guided Doubles rematch uses distances `[2,3,2,3]` and rolls `[2,1,2]`. The guided Doubles decider uses distances `[3,2,3,2]` and rolls `[1,2,1,2]`. Singles starts at `[4,5]` and uses `[2,3,2]`. The drawer's seed 14 reverses the guided winner in both Doubles rounds and gives Gunjan the singles sweep. The dice state and any pending roll survive refresh.
+- **Gold and recovery.** Enable the optional sweep bonus before either captain begins the series. A bonus is game-funded and separate from the pot. The drawer can lower a player's gold, change club membership, mute reminders, block the captains, or void an active table to exercise recovery paths. A withdrawn club booking can be followed by a private decider with fresh player confirmation. **Meera** is a replacement partner outside the club by default.
+- **Browser verification.** With Vite running, use `npm exec --package=playwright -- playwright install chromium` to install Chromium and make the `playwright` package available to the test (for example, `npm install --no-save --package-lock=false playwright`). Run `npm run e2e:series`. Set `BASE_URL` to point at another server or `CHROMIUM_PATH` to use an installed Chromium. The walkthrough uses a 360 px viewport, reduced motion, keyboard board input, reloads, and a stale inbox link.
+
+### Measuring the DAU hypothesis
+
+The drawer exposes local product events for invitation origin, partner acceptance, confirmed bookings, next-day check-ins, completed rounds, unique predictors and club result opens. Identity changes, clock advances and test fixtures stay out of those events. Dates are UTC and active player-days count each person once per day. In a later four-week pilot, compare average daily unique active users with a standard-result holdout using the same active-user definition and assign connected groups together where feasible. Track occasional partners and clubmates returning on a day they would otherwise skip, plus displaced normal matches, gold-entry declines and failed check-ins. The 10% lift is a pilot target.
+
+---
+
+## Original singles demo
+
 
 **Badla** is a return match that both players agree to. When a close 1v1 ends, the player who was caught can attach that one capture to an invitation. The opponent can play now, choose a time tomorrow evening, or pass. If they agree, both players come back, play the match, and the head-to-head score updates.
 
