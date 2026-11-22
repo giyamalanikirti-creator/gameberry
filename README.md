@@ -1,16 +1,14 @@
-# Badla: Doubles, Partner Assist, Grudge Night
+# Badla: turn a capture into a rivalry
 
-A concept prototype for a Ludo social loop. **Concept prototype, not affiliated with Gameberry.** All artwork is original SVG, nothing leaves the device, and the gold figures are proposed pilot values.
+A concept prototype for a Ludo social loop. **Concept prototype, not affiliated with Gameberry.** All artwork is original SVG, nothing leaves the device, every "AI" output is a deterministic function, and the gold figures are proposed pilot values.
 
-The story runs on one device with five logins over two days. Gunjan beats Riya in a 100-gold singles game. Riya takes Badla and brings Ananya. Gunjan defends and brings Shruti. Riya and Ananya win the Doubles, so the captains sit at 1-1 and Ananya gets a Partner Assist receipt. All four book tomorrow's decider as **Grudge Night**, a club fixture. Dev, a clubmate, picks a side. The next evening Gunjan and Shruti win the decider 2-1, and every wallet and prediction settles.
+A capture in a public match creates a rival. The player who was sent home takes **Badla**, a first-to-two series. They can play now, or let **Smart Fixture** book a time when both players usually play. At 1-1 the decider can be private or a four-player **Grudge Night** that clubmates follow and predict. The guided demo takes a first-time reviewer from the public match to the series result in about four minutes, without opening Demo controls.
 
-| 1 · Opening | 3 · Challenge received | 5 · Partner invite | 7 · Doubles endgame |
-|---|---|---|---|
-| ![](docs/screenshots/01-opening.png) | ![](docs/screenshots/03-received.png) | ![](docs/screenshots/05-partner.png) | ![](docs/screenshots/07-endgame.png) |
-| **8 · Partner Assist** | **9 · Book the decider** | **10 · Club fixture** | **12 · Club result** |
-| ![](docs/screenshots/08-assist.png) | ![](docs/screenshots/09-booking.png) | ![](docs/screenshots/10-fixture.png) | ![](docs/screenshots/12-club-result.png) |
-
-Desktop: the phone frame with the analytics panel beside it. ![](docs/screenshots/desktop.png)
+| Home | The capture | Result + Badla card | Smart Fixture | Lock-screen push | Booked |
+|---|---|---|---|---|---|
+| ![](docs/screenshots/mobile-home.png) | ![](docs/screenshots/mobile-capture.png) | ![](docs/screenshots/mobile-result.png) | ![](docs/screenshots/mobile-smart.png) | ![](docs/screenshots/mobile-lock.png) | ![](docs/screenshots/mobile-booked.png) |
+| **1-1: three options** | **Club card (Dev)** | **Series end** | **Desktop: phone + Model panel** | **Welcome** | |
+| ![](docs/screenshots/mobile-one-each.png) | ![](docs/screenshots/mobile-club.png) | ![](docs/screenshots/mobile-series-end.png) | ![](docs/screenshots/desktop-full.png) | ![](docs/screenshots/desktop-welcome.png) | |
 
 ## Commands
 
@@ -20,136 +18,113 @@ Requires Node 20+ (tested on Node 22).
 npm install        # install
 npm run dev        # http://localhost:5173
 npm run typecheck  # TypeScript
-npm test           # Vitest: 8 suites, 66 tests
-npm run build      # typecheck + production build into dist/
+npm test           # Vitest: 10 suites, 77 tests
+npm run build      # typecheck + production build into dist/ (static, hash routing, works on Vercel as-is)
 npm run preview    # serve dist/
-npm run e2e        # browser walkthrough of the whole story (needs a running server and `playwright`)
+npm run e2e        # Playwright: the whole guided demo on desktop and at 390 px (needs a running server)
 ```
 
-## The demo script
+## The guided demo
 
-Everything you do as a player happens in **that player's own session**. You switch player only through the **account pane** at the top right. No screen in the phone has a "continue as" control. When the next move belongs to someone else, the screen shows who it is waiting on and since when, and the account pane shows a badge on that player.
+On first load the **Welcome** screen shows the cast: Riya (you), Gunjan (rival), Ananya and Shruti (partners), and Dev (clubmate). Choose **Start guided demo**. The **story panel** sits beside the phone, or as a bottom sheet on a phone. It always says whose phone you hold, what is happening, and what to tap next. Its **Why it matters** box links each step to the model.
 
-| # | Sign in as (PIN) | Do |
+| Chapter | What happens | Why it matters (model) |
 |---|---|---|
-| 1 | Riya (2222) | Home → **See the result · Take Badla**. Watch the capture replay, then **Take Badla**. |
-| 2 | Riya | Challenge sheet: **Badla Doubles · You pay 100 · Win 200 back**, Play now, **Send to Gunjan**. |
-| 3 | Gunjan (1111) | **Waiting on you → Badla challenge** → **Accept · 100 gold on start**. |
-| 4 | Gunjan, then Riya | Seat board **2 of 4 seats filled** → each captain invites one friend (Shruti, Ananya). |
-| 5 | Ananya (3333), Shruti (4444) | Each accepts **their own** invitation ("Riya is down 0-1 to Gunjan. Join her side? Entry 100 gold. Win 200 back."). |
-| 6 | All four | Waiting table → **Ready · 100 gold**. All four entries are debited together when the last seat is ready. |
-| 7 | Riya, Gunjan, Ananya | Each takes their own turn: Roll, then Move. Ananya finishes on the exact 2, so Riya and Ananya win. |
-| 8 | Ananya, Shruti, Riya | Receipts: Ananya gets **You helped Riya take it to 1-1** and **Save my seat**. Shruti gets "One each. Defend the series with Gunjan?". Riya gets **Host Grudge Night**. |
-| 9 | Riya, then Gunjan, Ananya, Shruti | Riya offers *Tomorrow 9:00–9:30 pm*. Gunjan chooses it (2 of 4), then Ananya and Shruti confirm (4 of 4). |
-| 10–11 | Dev (5555) | The club card appears only now. Dev picks **Riya & Ananya**: "Your pick is in. Result tomorrow." |
-| 12 | Demo controls → **Jump to tomorrow's slot**, then all four | Predictions lock and check-in opens. Each player taps Ready and plays a turn. Gunjan and Shruti win 2-1. Dev sees "You picked Riya & Ananya. Not this time." |
+| 1 The capture | Riya taps **Quick**, is matched with Gunjan, and rolls and moves. Gunjan's 3 sends her home one square from the finish, with a board shake, a "Sent home!" toast and "😂 so close". Gunjan wins. | The trigger |
+| 2 Take Badla | The result screen shows **−100** and the **Badla card**: "Gunjan sent you home 1 square from the finish. Take Badla?" | Card 65% → invite 22% |
+| 3 Book tomorrow | Smart Fixture: "You both usually play around 20:00. Book Tomorrow 20:15?", with a confidence pill, two alternatives, **Choose another time**, and Why this? heat strips. | 1.22 extra days per participant |
+| 4 The invite | Gunjan is offline, so the panel shows **Gunjan's lock screen** with one push. Tapping it unlocks into Gunjan's session on the invitation (Accept, Suggest another time, Pass). | 0.50 offline pull |
+| 5 Fixture day | The **Booked** ticket has one button, **Skip to tomorrow 20:15**. Then "Your table is ready": both check in and Riya wins → 1-1. | Counts only if Gunjan would have skipped (60%) |
+| 6 Bring backup | At 1-1 there are three options: **Private decider now**, **Book the decider**, or **Make it a Grudge Night**. Each captain invites a friend, who accepts in her own session. All four confirm. | 0.30 per partner* |
+| 7 Grudge Night | The club card appears. Dev picks **Riya & Ananya**, free. Then the story jumps to "Next day, 21:00", all four ready up, and the match is played. | 0.23 per clubmate* |
+| 8 Series end | **Riya wins the series 2-1**, with confetti, a whole-series gold receipt and a rivalry card ("Rival since 22 Nov"). Dev sees "You picked Riya & Ananya. Riya & Ananya won." | Lift = participants × extra days ÷ 7.5 |
 
-"Remember this device" is on by default, so each PIN is entered only once. **Lock all sessions** clears them.
+\* This PDF gives the labels 1.22 / 0.50 / 0.30 / 0.23 but not which step each belongs to. 1.22 and 0.50 are mapped as the PDF says. 0.30 (partners) and 0.23 (clubmates) are my assignment; check them against the Excel model.
 
-**Balance checkpoints.** These are the regression test, and `tests/wallet.test.ts` asserts each row.
+**Handoffs keep consent honest.** When the next action belongs to someone else, **Next** shows a 600 ms "Now on Gunjan's phone" card. It then opens the account pane on Gunjan's sign-in card, and **Fill it** enters the demo PIN. Next can also show a lock screen, move the story clock, or pulse the button the player should tap. It never taps Accept, Ready or Pick for anyone.
 
-| Point | Gunjan | Riya | Ananya | Shruti | Dev | Total |
-|---|---|---|---|---|---|---|
-| Seeded | 1,000 | 1,000 | 1,000 | 1,000 | 1,000 | 5,000 |
-| Opening result applied (start screen) | 1,100 | 900 | 1,000 | 1,000 | 1,000 | 5,000 |
-| After the guided Doubles comeback | 1,000 | 1,000 | 1,100 | 900 | 1,000 | 5,000 |
-| After the guided decider | 1,100 | 900 | 1,000 | 1,000 | 1,000 | 5,000 |
+**Free mode** has no forced steps. The panel shows a checklist of the eight flows seen so far, and you switch players in the top-right account pane.
 
-## Deterministic dice and fixtures
+**Other panel controls:**
+- **Let the window close**: the no-show path. Nothing is charged and there is no score change.
+- **Experiment arm A/B/C/D**:
+  - A: today's result screen only.
+  - B: instant rematch, play now only.
+  - C: full Badla.
+  - D: Badla plus Smart Fixture.
 
-The board is a Quick endgame in a demo variant. Each player has one active token in their own protected lane. One die per turn, no extra turn on a six, finishing needs an exact roll, and an overshoot passes the turn. Turn order is Riya, Gunjan, Ananya, Shruti, so the sides alternate. Partners sit in opposite yards.
+  Switching the arm resets to the match result and changes only the post-match options.
+- **Model** tab: the analytics panel (active-day strip, funnel, DAU calculator, guardrails, product-only event log) and live counters (cards shown, challenges, booked, seats ready, extra active days).
 
-The **guided story** uses `comeback` for round 2 and `decider` for round 3. The engine derives every result from these seeds; no screen writes a winner.
+## Smart Fixture (mocked, deterministic)
 
-| Fixture | Doubles distances (R, G, A, S) | Rolls | Engine result |
-|---|---|---|---|
-| `comeback` | 2, 3, 2, 3 | 2, 1, 2 | Riya & Ananya win |
-| `decider` | 3, 2, 3, 2 | 1, 2, 1, 2 | Gunjan & Shruti win |
-| `sweep-gunjan` | 4, 2, 4, 2 | 1, 2, 1, 2 | Gunjan's side (2-0 sweep in round 2) |
-| `sweep-riya` | 2, 4, 2, 4 | 2, 1, 2 | Riya's side, straight rolls |
-| `decider-riya` | 3, 3, 2, 4 | 3, 1, 2 | Riya's side (alternate decider) |
+`src/smart/smartFixture.ts` implements the spec's seed data and formulas:
 
-Every fixture also has a singles script. You choose the fixture for the next round, or **Random dice**, in the Demo drawer. The choice is locked while a match is live. A rolled but unspent die survives a refresh. Optional **auto-play** takes other seats' turns once a human has rolled first. It never starts a round, readies a seat or confirms a booking.
+- **Hour profiles:** Riya and Gunjan, from the spec.
+- **`pReturnByDay`:** Monday 0.35 for Riya and 0.55 for Gunjan.
+- **`scoreSlot`:** `scoreSlot = Π(norm(hourProfile[p])[hour] × showRate[p]) × avg(1 − pReturn[p][day])`.
+- **`cardScore`:** closeness plus heat. The card shows at 0.8 because the capture was 1 square from home and there were 3 chats.
+- **`inviteLine`:** six templates filled with match facts. The Why panel shows the plain template for comparison.
 
-**The opening replay** reads an immutable snapshot of the opening game. In it, Gunjan (teal) rolls 3 from square 34 and lands on Riya's last token. That token is on square 50, the last shared square before Riya's protected lane. `tests/engine.test.ts` replays this through the move rules and checks it. With reduced motion, the replay shows only the final frame, with a caption.
+The copy follows the spec's rules. It says "You both usually play around…", never "AI predicts". There is at most one ✨ tag per screen, and the tags are hidden in arm C. The player can always choose another time.
 
-## The consent shortcut
+**One deviation.** The spec's copy says **21:15**, but its own seeded profiles peak at **20:00** for both players. The scoring function therefore recommends **Tomorrow 20:15**, and the push, ticket and skip button show 20:15. To get 21:15, shift each profile by one hour in `hourProfile`.
 
-The Demo drawer's **Auto-confirm remaining players** fills outstanding booking confirmations and renews stale acceptances. Every record it creates carries `source: "demo"`, and the analytics panel leaves those records out. It never appears inside a product screen.
+## Rules engine (unchanged rulings)
 
-## The simulated clock
+These carry over from the Doubles/Grudge Night build:
 
-The clock is seeded at **Sun 22 Nov 2026, 8:14 pm IST** and runs in real time. An amber dot on the clock chip shows when it has been moved off real time. All times are stored as UTC instants and shown in the viewer's zone. Windows include their start and exclude their end.
+- **Per-player sessions.** Every player has their own PIN session. Switching happens only in the account pane, which is the only code that calls the sign-in function; a test enforces this.
+- **Wallet.** It is a ledger, and balances are derived from it. A round starts with one atomic action that writes all entry debits together. Settlements and refunds are idempotent.
+- **Re-acceptance.** If the terms change, earlier acceptances go stale and must be confirmed again. Suggesting another time makes the challenger confirm it.
+- **Alerts.** Each player gets at most two Badla alerts a day; further ones wait in the inbox, marked **Delivered tomorrow**.
+- **Settings from the player's own UI.** Mute, reminders and block are all set from the ⚙ on the Badla tab.
+- **The clock can't settle a game.** The "Skip to tomorrow" button and the story's time jumps only move the clock.
 
-The Demo drawer has +15 min, +1 hour, Jump to window open, Jump to tomorrow's slot, and Reset to real time.
+**Gold checkpoints** for the guided path (`tests/guided.test.ts`). Total gold is 5,000 throughout.
 
-Time can open and close windows, expire invitations (24 h), lock predictions at the start time, fire reminders, and expire a series after 7 days without a decider. Time **cannot settle a round, decide a board or move gold**. `tests/clock.test.ts` proves this.
+| Point | Gunjan | Riya | Ananya | Shruti | Dev |
+|---|---|---|---|---|---|
+| Start (welcome) | 1,000 | 1,000 | 1,000 | 1,000 | 1,000 |
+| After the public match | 1,100 | 900 | 1,000 | 1,000 | 1,000 |
+| After round 2 (Riya wins, 1-1) | 900 | 1,100 | 1,000 | 1,000 | 1,000 |
+| After Grudge Night (Team Riya 2-1) | 800 | 1,200 | 1,100 | 900 | 1,000 |
 
-## What the reducer guarantees
+The earlier Doubles-first path (Doubles comeback on day 1, then Grudge Night) still works in free mode and under Demo controls → Jump to scene. Its checkpoints are 1,100/900, then 1,000/1,000/1,100/900, then **900/1,100/1,200/800**, now that its decider also goes to Team Riya (`tests/wallet.test.ts`).
 
-- **Identity and consent.** Every action takes the actor from the signed-in session, never from the payload.
-  - Opening another player's invitation shows it read-only, with "This invitation is for Ananya".
-  - Navigation and opening a notification never change consent.
-  - Only `src/session/` mentions `signIn`, and a test fails the build if any other file does.
-- **One atomic start.** `startRound` checks the whole roster, every acceptance and every balance first. Only then does it write all entry debits.
-  - A blocked start names the seat, for example "Shruti needs 100 gold to join".
-  - No partial debit is ever written.
-- **Idempotency.**
-  - Settlement is keyed by round ID and refunds by `roundId:refund:playerId`.
-  - A second settle, a repeated finish, a double-tapped start or a duplicate invite does nothing.
-- **Gold is conserved.**
-  - Balances are never stored; a balance is the sum of the ledger.
-  - With the sweep bonus off, balances plus the pot in play equal 5,000 after every action.
-  - Balances alone equal 5,000 whenever no round is live.
-  - The Demo drawer shows the five balances, the pot and the total.
-- **Terms changes force re-acceptance.** Each acceptance stores a terms hash covering format, entry, roster version, timing, slot and club visibility. If any of these change, the seat shows **Terms changed · Confirm again**.
-- **Club fixture.** It is published only after four matching confirmations, with at most one live listing per round. Withdrawing it is terminal for that listing. Only club members can see it, and that is checked when the fixture is read. Participants can't predict. Totals stay hidden until the round settles.
-- **Notifications.**
-  - All notifications are local.
-  - Each player gets at most two Badla notifications a day.
-  - Muting suppresses notifications but keeps the cards.
-  - Blocking ends every Badla link with that player.
-  - A notification for someone who isn't signed in shows as a toast on the shell. Tapping the toast opens the account pane with that player highlighted.
+## How the two specs were reconciled
 
-## Analytics panel
-
-The panel sits beside the phone, or under it below 900 px. It counts only `source: "product"` events.
-
-- **Active days.** A 7-day strip per player, with a ★ for each incremental active day after the opening game.
-- **Funnel.** The base-case rates (65%, 22%, 60%, 50%, 66%, 60%) plus the two Doubles partner stages. Stages light up as the demo path reaches them.
-- **DAU calculator.** Lift = participation × extra days / 7.5. The base case is 34% × 2.26, giving **+10.2%**, about **+153K** on 1.5M DAU. Snaps are Low 5.1% and High 16.9%. These are illustrative inputs from the case model, to be replaced with Ludo STAR analytics.
-- **Guardrails.** Counters for gold-entry declines, four-seat no-shows, push mutes, blocks and suppressed notifications.
-- **Event log.**
-
-## Rulings and deviations
-
-The SOP's rulings were applied throughout: gold stakes, the settled-game trigger, either captain can start, first to two, a five-person cast, and no League credit for Badla rounds. Where the spec left gaps or contradicted itself, this build does the following:
-
-- **Calendar.** 22 Nov 2026 is a Sunday, so the clock reads "Sun 22 Nov", not "Sat".
-- **Slot window.** The spec says the host offers up to two slots "inside 24 hours", but its own guided slot (tomorrow 9 pm) is booked about 24¼ hours ahead. Slots are therefore allowed **up to the end of tomorrow**.
-- **Conservation.** It is stated as balances plus the pot in play. During a live round, 400 gold sits in the pot, so balances alone can't sum to 5,000 then.
-- **Roster changes.** Acceptances tie to a *roster version*, so filling an open seat doesn't make earlier acceptances stale. A replacement, a drop-out or a switch to singles does.
-- **`sweep-riya`.** It can't be a true 2-0, because the opening win is Gunjan's. It is a straight-rolls win for Riya's side.
-- **Saved seats.** They express interest only, as the SOP currently has it. A Grudge Night decider reuses the previous Doubles pairs, and each of the four confirms the booking.
-- **Leaving.** Leaving the series isn't allowed during a live match. "Leave match" voids the round, and every entry is refunded once.
-- **Mute vs block.** The earlier spec said muting ends Badla links. Here, **block** ends them and **mute** only suppresses notifications. That matches "mutes leave the lobby card available".
-- **Single offered slot.** When the host offers exactly one slot, that offer counts as the host's confirmation of it once it is chosen.
+- **Ending.** Team Riya wins the decider 2-1, as chosen. The guided decider seed is `decider-riya`.
+- **Switching players.** The story panel guides, but players still switch through the account pane, as chosen. "Continue as…" buttons were not added.
+- **Grudge Night from singles.** At 1-1 after a singles round 2, Grudge Night is offered and each captain **brings backup**. This replaces the earlier rule that Grudge Night needs a previous Doubles round. A shared club is still required.
+- **Start and reset.** Both begin before the public match, with five players at 1,000. The earlier seeded start, with the opening already applied, is scene 1 in Demo controls.
+- **Club picks.** Totals stay hidden until the match, per the earlier spec, and the card says "Picks lock at start; totals show after the match". The new spec's per-side pick count before lock was not added.
+- **Slot range.** Slots may be today, tomorrow or the day after (the picker's range).
+- **Theme.** Deep plum backdrop, gold primary buttons, and ember kept for Badla moments. Token shapes: Riya ●, Gunjan ◆, Ananya ▲, Shruti ■.
+- **Not built:**
+  - links to the deck and Excel model (no URLs were provided);
+  - the separate "Smart Fixture doc" (everything here comes from the build-spec PDF);
+  - deploying to Vercel (no access from here; `dist/` is ready to deploy);
+  - a real "Start a new series" (it shows a note instead).
+- **Daily rewards.** Magic Chest and Lucky Dice show a toast only. There is no shop.
 
 ## Code map
 
 ```
 src/
-  engine/     board.ts (geometry, routes), rules.ts, dice.ts, fixtures.ts, replay.ts
-  domain/     types.ts, time.ts
-  state/      reducer.ts, selectors.ts, seed.ts, persistence.ts (badla.v1), store.tsx
-  session/    SessionProvider.tsx, AccountPane.tsx, SignInCard.tsx   ← the only signIn
-  screens/    Home, Opening (1/1b), Challenge (2), Invite (3/5), Round (4/6/7), Receipt (8),
-              Booking (9), Club + Fixture (10–12), Inbox
-  demo/       DemoDrawer.tsx, story.ts (guided script + 12 scenes), clock.ts, autoplay.ts
-  analytics/  events.ts, dau.ts, Panel.tsx
-  ui/         Board.tsx, Replay.tsx, kit.tsx
-tests/        series, round, wallet, consent, engine, fixture, clock, dau
-e2e/          journey.cjs (Playwright walkthrough)
+  engine/     board, rules, dice, fixtures, replay, publicMatch (the scripted capture)
+  smart/      smartFixture.ts (deterministic AI mocks)
+  domain/     types, time
+  state/      reducer, selectors, seed (fresh + settled starts), persistence (badla.v1, v2 root), store
+  session/    SessionProvider, AccountPane, SignInCard   ← the only sign-in code
+  screens/    Home, PublicMatch, Opening, Challenge, Invite, Booked, Round, Receipt, Booking,
+              BadlaHub, Club/Fixture/Inbox, SeriesEnd/Profile
+  demo/       StoryPanel, storyline (chapters from live state), guided.ts (scripted path),
+              story.ts (Doubles-first path + scenes), DemoDrawer, autoplay, clock
+  analytics/  Panel, events, dau
+  ui/         Board, Replay, LockScreen, Welcome, Term (jargon tooltips), shell context, kit
+tests/        series, round, wallet, consent, engine, fixture, clock, dau, smart, guided
+e2e/          journey.cjs
 ```
 
-Deep links are hash routes: `#/invite/<id>`, `#/round/<id>`, `#/fixture/<id>` and `#/receipt/<roundId>`. Opening a link re-checks it against the current state and the signed-in player.
+Hash routes include `#/welcome`, `#/home`, `#/match/public`, `#/badla/booked/:roundId`, `#/invite/:id`, `#/round/:id`, `#/fixture/:id`, `#/series/:id/end` and `#/profile/rivals`.

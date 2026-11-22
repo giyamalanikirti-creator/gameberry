@@ -127,15 +127,19 @@ export function lastSettledRound(s: State, series: Series): Round | null {
   return settled[settled.length - 1] ?? null;
 }
 
-/** Score 1-1, last round Doubles with both pairs, and all four share a club. */
+/**
+ * Grudge Night is offered at 1-1 when no round is open and the captains share a
+ * club. After a Doubles round the same four must all be in it; after singles,
+ * each captain brings backup from the club.
+ */
 export function canHostGrudgeNight(s: State, seriesId: string): boolean {
   const series = s.series[seriesId];
   if (!series || seriesStatus(s, seriesId) !== 'tied' || openRound(s, series)) return false;
   const last = lastSettledRound(s, series);
-  if (!last || last.format !== 'doubles') return false;
-  const four = rosterIds(s, last);
-  if (four.length !== 4) return false;
-  return Object.values(s.clubs).some((c) => four.every((p) => c.memberIds.includes(p)));
+  if (!last) return false;
+  const people = last.format === 'doubles' ? rosterIds(s, last) : [...series.captainIds];
+  if (last.format === 'doubles' && people.length !== 4) return false;
+  return Object.values(s.clubs).some((c) => people.every((p) => c.memberIds.includes(p)));
 }
 
 export function sharedClubId(s: State, players: PlayerId[]): string | null {

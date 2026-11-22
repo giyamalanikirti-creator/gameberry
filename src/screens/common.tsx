@@ -38,7 +38,12 @@ export function routeToHash(r: Route): string {
     case 'opening': return '#/opening';
     case 'club': return '#/club';
     case 'inbox': return '#/inbox';
-    default: return '#/';
+    case 'public': return '#/match/public';
+    case 'booked': return `#/badla/booked/${r.roundId}`;
+    case 'seriesEnd': return `#/series/${r.seriesId}/end`;
+    case 'profile': return '#/profile/rivals';
+    case 'badla': return '#/badla';
+    default: return '#/home';
   }
 }
 
@@ -55,6 +60,11 @@ export function hashToRoute(h: string): Route | null {
     case 'opening': return { name: 'opening' };
     case 'club': return { name: 'club' };
     case 'inbox': return { name: 'inbox' };
+    case 'match': return { name: 'public' };
+    case 'badla': return m[1] === 'booked' && m[2] ? { name: 'booked', roundId: m[2] } : { name: 'badla' };
+    case 'series': return id ? { name: 'seriesEnd', seriesId: id } : null;
+    case 'profile': return { name: 'profile' };
+    case 'home':
     case '': return { name: 'home' };
     default: return null;
   }

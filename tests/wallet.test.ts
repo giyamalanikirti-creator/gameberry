@@ -19,9 +19,9 @@ describe('balance checkpoints (the regression test)', () => {
     expectConserved(s);
   });
 
-  it('after the guided decider: 1,100 / 900 / 1,000 / 1,000 / 1,000', () => {
+  it('after the decider (Team Riya 2-1): 900 / 1,100 / 1,200 / 800 / 1,000', () => {
     const s = story(STEPS);
-    expect(balances(s)).toEqual({ gunjan: 1100, riya: 900, ananya: 1000, shruti: 1000, dev: 1000 });
+    expect(balances(s)).toEqual({ gunjan: 900, riya: 1100, ananya: 1200, shruti: 800, dev: 1000 });
     expectConserved(s);
   });
 });

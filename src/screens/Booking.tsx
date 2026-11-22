@@ -4,12 +4,14 @@ import { bookingConfirmedBy, bookingCount, canHostGrudgeNight, liveFixtureForRou
 import { Avatar, Card, Gold, SeriesScore, Waiting } from '../ui/kit';
 import { suggestedSlots } from './Challenge';
 import { Back, Terminal, sentAt, useMe } from './common';
+import { useTarget } from '../ui/shell';
 
 function HostForm({ seriesId }: { seriesId: string }) {
   const { state, me, now, tz, dispatch, go } = useMe();
   const slots = useMemo(() => suggestedSlots(now, tz, state.players[me].usualPlayHours), [now, tz, me, state.players]);
   const [picked, setPicked] = useState<number[]>([0]);
   const [err, setErr] = useState<string | null>(null);
+  const offerT = useTarget('grudge-night', 'btn btn-ember btn-big');
   const series = state.series[seriesId];
   if (!series?.captainIds.includes(me) || !canHostGrudgeNight(state, seriesId)) {
     return <Terminal title="Grudge Night isn't available" body="It needs 1-1 after a Doubles round, with all four players in one club. A private decider is still possible." />;
@@ -17,7 +19,7 @@ function HostForm({ seriesId }: { seriesId: string }) {
   return (
     <div className="screen">
       <Back />
-      <p className="eyebrow">Host Grudge Night · decider · club fixture</p>
+      <p className="eyebrow">Make it a Grudge Night · decider · club fixture</p>
       <h1 className="title">Book the decider</h1>
       <SeriesScore state={state} seriesId={seriesId} />
       <fieldset className="choice">
@@ -29,11 +31,11 @@ function HostForm({ seriesId }: { seriesId: string }) {
           </label>
         ))}
       </fieldset>
-      <p className="muted small">Doubles, 100 gold a seat, 400 pot. All four confirm the time, the entry and club visibility. The card appears in Chai & Dice Club only after the fourth confirmation.</p>
+      <p className="muted small">2v2, 100 gold a seat, 400 pot. Each captain brings backup. All four confirm the time, the entry and club visibility. The card appears in Chai & Dice Club only after the fourth confirmation.</p>
       {err && <p className="error" role="alert">{err}</p>}
       <button
         type="button"
-        className="btn btn-ember btn-big"
+        {...offerT}
         disabled={picked.length === 0}
         onClick={() => {
           const r = dispatch({ type: 'HOST_GRUDGE_NIGHT', seriesId, slots: picked.map((i) => slots[i]) });
@@ -53,6 +55,8 @@ export function BookingScreen({ id }: { id: string }) {
   const { state, me, now, tz, dispatch, go } = useMe();
   const [choice, setChoice] = useState(0);
   const [err, setErr] = useState<string | null>(null);
+  const chooseT = useTarget('choose-slot', 'btn btn-ember btn-big');
+  const confirmT = useTarget('confirm-booking', 'btn btn-ember btn-big');
   if (id.startsWith('new:')) return <HostForm seriesId={id.slice(4)} />;
   const b = state.bookings[id];
   if (!b) return <Terminal title="Not available" body="This booking does not exist." />;
@@ -91,7 +95,7 @@ export function BookingScreen({ id }: { id: string }) {
                 <input type="radio" name="slot" checked={choice === i} onChange={() => setChoice(i)} /> {formatSlot(w, now, tz)} <span className="tz">IST</span>
               </label>
             ))}
-            <button type="button" className="btn btn-ember btn-big" onClick={() => act(dispatch({ type: 'CHOOSE_SLOT', bookingId: b.id, slotIndex: choice }))}>
+            <button type="button" {...chooseT} onClick={() => act(dispatch({ type: 'CHOOSE_SLOT', bookingId: b.id, slotIndex: choice }))}>
               Choose · confirm 100 gold entry
             </button>
           </fieldset>
@@ -111,7 +115,7 @@ export function BookingScreen({ id }: { id: string }) {
             ))}
           </ul>
           {b.status === 'chosen' && !bookingConfirmedBy(state, b, me) && (
-            <button type="button" className="btn btn-ember btn-big" onClick={() => act(dispatch({ type: 'CONFIRM_BOOKING', bookingId: b.id }))}>
+            <button type="button" {...confirmT} onClick={() => act(dispatch({ type: 'CONFIRM_BOOKING', bookingId: b.id }))}>
               Confirm · 100 gold entry{r.clubVisible ? ' · club-visible' : ''}
             </button>
           )}

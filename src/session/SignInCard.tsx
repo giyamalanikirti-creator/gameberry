@@ -36,7 +36,7 @@ export function SignInCard({ player, onDone, onBack }: { player: PlayerId; onDon
         4-digit PIN
         <input inputMode="numeric" pattern="[0-9]*" maxLength={4} autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))} aria-describedby="demo-pin" />
       </label>
-      <p id="demo-pin" className="fine">Demo PIN {p.pin}</p>
+      <p id="demo-pin" className="fine">Demo PIN {p.pin} <button type="button" className="link" onClick={() => setPin(p.pin)}>Fill it</button></p>
       <label className="check"><input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} /> Remember this device</label>
       {err && <p className="error" role="alert">{err}</p>}
       <button type="submit" className="btn btn-ember" disabled={pin.length !== 4}>Sign in</button>

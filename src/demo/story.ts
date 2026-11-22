@@ -1,5 +1,5 @@
 /**
- * The guided two-day story as data. Tests run it as product actions; the Demo
+ * Kirti's Doubles path as data (comeback on day 1, Grudge Night on day 2). Tests run it as product actions; the Demo
  * drawer's jump-to-scene shortcuts replay a prefix of it with source "demo".
  */
 import { DEMO_START, MINUTE, tomorrowWindow } from '../domain/time';
@@ -61,11 +61,10 @@ export function storySteps(): Step[] {
     { actor: 'gunjan', at: DECIDER_SLOT.start + MINUTE, action: (s) => ({ type: 'READY', roundId: latestRound(s).id }) },
     { actor: 'ananya', at: DECIDER_SLOT.start + 2 * MINUTE, action: (s) => ({ type: 'READY', roundId: latestRound(s).id }) },
     { actor: 'shruti', at: DECIDER_SLOT.start + 2 * MINUTE, action: (s) => ({ type: 'READY', roundId: latestRound(s).id }) },
-    /* 26–33 */
+    /* 26–31: Riya finishes on 3, Gunjan to 2, Ananya finishes on 2 → Team Riya 2-1 */
     ...play('riya', DECIDER_SLOT.start + 3 * MINUTE),
     ...play('gunjan', DECIDER_SLOT.start + 3 * MINUTE),
     ...play('ananya', DECIDER_SLOT.start + 4 * MINUTE),
-    ...play('shruti', DECIDER_SLOT.start + 4 * MINUTE),
   ];
 }
 

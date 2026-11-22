@@ -5,7 +5,10 @@
 import { fixtureDice, randomDice } from '../engine/dice';
 import { FIXTURES, FixtureName, guidedFixtureFor } from '../engine/fixtures';
 import { createGame, moveToken, rollDie } from '../engine/rules';
-import { INVITE_TTL, PLAY_NOW_WINDOW, SERIES_TTL, WINDOW_LENGTH, analyticsDate, endOfTomorrow, localDateKey } from '../domain/time';
+import { DAY, INVITE_TTL, PLAY_NOW_WINDOW, SERIES_TTL, WINDOW_LENGTH, analyticsDate, endOfTomorrow, localDateKey, tomorrowIn, zonedTimeToUtc } from '../domain/time';
+import { applyPublicStep, PUBLIC_SCRIPT, PUBLIC_START } from '../engine/publicMatch';
+import { applyOpening } from './seed';
+import { inviteLine, smartTimeLabel } from '../smart/smartFixture';
 import type {
   Booking,
   ClubFixture,
@@ -55,8 +58,15 @@ export interface Ctx {
 export type Action =
   | { type: 'LOG'; name: string; seriesId?: string; roundId?: string; detail?: Record<string, string | number | boolean | null> }
   | { type: 'SIGNED_IN' }
+  | { type: 'PUBLIC_QUICK' }
+  | { type: 'PUBLIC_MATCHED' }
+  | { type: 'PUBLIC_ROLL' }
+  | { type: 'PUBLIC_MOVE' }
+  | { type: 'PUBLIC_OPPONENT' }
+  | { type: 'PUBLIC_FAST_FORWARD' }
+  | { type: 'SET_REMINDERS'; on: boolean }
   | { type: 'SEND_CHALLENGE'; format: 'singles' | 'doubles'; timing: 'now' | 'scheduled'; slots?: TimeWindow[] }
-  | { type: 'RESPOND_CHALLENGE'; inviteId: string; accept: boolean; slotIndex?: number }
+  | { type: 'RESPOND_CHALLENGE'; inviteId: string; accept: boolean; slotIndex?: number; customSlot?: TimeWindow }
   | { type: 'INVITE_PARTNER'; roundId: string; toPlayerId: PlayerId }
   | { type: 'RESPOND_PARTNER'; inviteId: string; accept: boolean }
   | { type: 'REPLACE_PARTNER'; seatId: string }
@@ -129,20 +139,30 @@ function ledger(d: State, playerId: PlayerId, roundId: string | null, kind: 'ent
   return true;
 }
 
-function notify(d: State, to: PlayerId, kind: string, title: string, route: Route, at: number, source: Source, seriesId: string | null): void {
+const REMINDER_KINDS = new Set(['table_open', 'window_open']);
+
+/**
+ * Local notification adapter. Mutes and reminders-off drop the alert (the card
+ * stays). Past two alerts a day, the alert waits in the inbox, delivered tomorrow.
+ */
+function notify(d: State, to: PlayerId, kind: string, title: string, route: Route, at: number, source: Source, seriesId: string | null, body: string | null = null): void {
   const p = d.players[to];
   let reason: string | null = null;
   if (seriesId && p.mutedSeriesIds.includes(seriesId)) reason = 'muted';
-  else {
-    const day = localDateKey(at, p.timezone);
-    const today = d.notifications.filter((n) => n.to === to && localDateKey(n.createdAt, p.timezone) === day).length;
-    if (today >= NOTIFY_BUDGET) reason = 'daily_budget';
-  }
+  else if (p.remindersOff && REMINDER_KINDS.has(kind)) reason = 'reminders_off';
   if (reason) {
     track(d, 'notification_suppressed', at, source, { playerId: to, seriesId, detail: { kind, reason } });
     return;
   }
-  d.notifications.push({ id: nextId(d, 'n'), to, kind, title, route, createdAt: at, readAt: null });
+  const day = localDateKey(at, p.timezone);
+  const today = d.notifications.filter((n) => n.to === to && n.deferredTo === null && localDateKey(n.createdAt, p.timezone) === day).length;
+  let deferredTo: number | null = null;
+  if (today >= NOTIFY_BUDGET) {
+    const [y, m, dd] = tomorrowIn(at, p.timezone);
+    deferredTo = zonedTimeToUtc(y, m, dd, 9, 0, p.timezone);
+    track(d, 'notification_deferred', at, source, { playerId: to, seriesId, detail: { kind, reason: 'daily_cap' } });
+  }
+  d.notifications.push({ id: nextId(d, 'n'), to, kind, title, route, createdAt: at, readAt: null, deferredTo, body });
 }
 
 function name(d: State, p: PlayerId | null): string {
@@ -210,11 +230,11 @@ function newRound(d: State, series: Series, fields: Partial<Round> & Pick<Round,
 
 function validSlots(d: State, slots: TimeWindow[] | undefined, at: number, tz: string): string | null {
   if (!slots || slots.length < 1 || slots.length > 2) return 'offer one or two slots';
-  const latest = endOfTomorrow(at, tz);
+  const latest = endOfTomorrow(at, tz) + DAY; // today, tomorrow or the day after
   for (const w of slots) {
     if (w.end - w.start !== WINDOW_LENGTH) return 'slots are 30 minutes';
     if (w.start <= at) return 'slots must be in the future';
-    if (w.start >= latest) return 'slots must start by the end of tomorrow';
+    if (w.start >= latest) return 'slots must start by the end of the day after tomorrow';
   }
   void d;
   return null;
@@ -429,7 +449,7 @@ export function reconcile(prev: State, at: number): State {
       }
       r.status = 'checkin';
       track(d, 'checkin_opened', at, src, { seriesId: r.seriesId, roundId: r.id, detail: { timing: 'scheduled' } });
-      for (const p of rosterOrInvited(d, r)) notify(d, p, 'window_open', 'Your Badla window is open · Ready up', { name: 'round', id: r.id }, at, src, r.seriesId);
+      for (const p of rosterOrInvited(d, r)) notify(d, p, 'window_open', 'Your table is ready', { name: 'round', id: r.id }, at, src, r.seriesId, 'Check in within 30 minutes. Gold moves only when every seat is ready.');
     } else if (r.status === 'checkin' && r.window && at >= r.window.end) {
       // Ready wait ends at window close. Nothing was debited, so nothing to refund.
       r.status = 'expired';
@@ -499,8 +519,79 @@ function apply(d: State, a: Exclude<Action, { type: 'TICK' }>, ctx: Ctx): Outcom
       return;
     }
 
+    case 'PUBLIC_QUICK': {
+      if (me !== 'riya') return 'In this story the public match is Riya\'s';
+      if (d.opening.played) return 'The public match is already played';
+      if (d.publicGame && d.publicGame.phase !== 'done') return { noop: true };
+      d.publicGame = { phase: 'matchmaking', tokens: structuredClone(PUBLIC_START), turn: 'riya', die: null, index: 0, captured: false, log: [], startedAt: at };
+      track(d, 'quick_match_started', at, source, { playerId: me });
+      return;
+    }
+    case 'PUBLIC_MATCHED': {
+      const g = d.publicGame;
+      if (!g || g.phase !== 'matchmaking' || me !== 'riya') return 'not matchmaking';
+      g.phase = 'playing';
+      g.log.push('Matched with Gunjan · Quick · 100 gold');
+      return;
+    }
+    case 'PUBLIC_ROLL':
+    case 'PUBLIC_MOVE':
+    case 'PUBLIC_OPPONENT': {
+      const g = d.publicGame;
+      if (!g || g.phase !== 'playing' || me !== 'riya') return 'No public match in progress';
+      const step = PUBLIC_SCRIPT[g.index];
+      if (!step) return 'The match is over';
+      if (a.type === 'PUBLIC_OPPONENT' ? step.who !== 'gunjan' : step.who !== 'riya') return 'Not your turn';
+      if (a.type === 'PUBLIC_ROLL') {
+        if (g.die !== null) return 'Move first';
+        g.die = step.roll;
+        const res = applyPublicStep(g.tokens, g.index)!;
+        if (!res.moved) { g.log.push(res.text); g.die = null; g.index += 1; g.turn = 'gunjan'; }
+        return;
+      }
+      if (a.type === 'PUBLIC_MOVE' && g.die === null) return 'Roll first';
+      const res = applyPublicStep(g.tokens, g.index);
+      if (!res) return 'Illegal move';
+      g.tokens = res.tokens;
+      g.log.push(res.text);
+      g.die = null;
+      g.index += 1;
+      if (res.captured) { g.captured = true; track(d, 'capture_seen', at, source, { playerId: me, detail: { squaresFromHome: 1 } }); }
+      if (res.finished) {
+        g.phase = 'done';
+        applyOpening(d, at);
+        track(d, 'quick_match_finished', at, source, { playerId: me, detail: { winner: 'gunjan', entry: 100 } });
+        return;
+      }
+      g.turn = PUBLIC_SCRIPT[g.index]?.who ?? 'riya';
+      return;
+    }
+    case 'PUBLIC_FAST_FORWARD': {
+      const g = d.publicGame;
+      if (!g || g.phase !== 'playing' || !g.captured || me !== 'riya') return 'Not available yet';
+      while (g.index < PUBLIC_SCRIPT.length) {
+        const res = applyPublicStep(g.tokens, g.index)!;
+        g.tokens = res.tokens;
+        g.log.push(res.text);
+        g.index += 1;
+        if (res.finished) break;
+      }
+      g.die = null;
+      g.phase = 'done';
+      applyOpening(d, at);
+      track(d, 'quick_match_finished', at, source, { playerId: me, detail: { winner: 'gunjan', entry: 100, fastForward: true } });
+      return;
+    }
+    case 'SET_REMINDERS': {
+      if (player.remindersOff === !a.on) return { noop: true };
+      player.remindersOff = !a.on;
+      track(d, a.on ? 'reminders_on' : 'reminders_off', at, source, { playerId: me });
+      return;
+    }
+
     case 'SEND_CHALLENGE': {
       const op = d.opening;
+      if (!op.played) return 'Play the public match first';
       if (player.accountKind !== 'full' || (me !== op.winnerId && me !== op.loserId)) return 'Only the two captains can start a Badla';
       const other = me === op.winnerId ? op.loserId : op.winnerId;
       if (isBlockedPair(d, me, other)) return 'Badla is off between you two';
@@ -562,7 +653,14 @@ function apply(d: State, a: Exclude<Action, { type: 'TICK' }>, ctx: Ctx): Outcom
       d.invites[inv.id] = inv;
       theirSeat.inviteId = inv.id;
       track(d, 'challenge_sent', at, source, { playerId: me, seriesId: series.id, roundId: r.id, detail: { format: a.format, timing: a.timing, entry: r.entryGold, decider: r.isDecider } });
-      notify(d, other, 'challenge', `${player.name} wants Badla · ${a.format === 'doubles' ? 'Doubles, 100 gold a seat' : 'Singles, 200 gold'}`, { name: 'invite', id: inv.id }, at, source, series.id);
+      const sc = seriesScore(d, series.id);
+      const otherSide: Side = series.sides.A === other ? 'A' : 'B';
+      const body = inviteLine({
+        from: player.name, to: d.players[other].name, squaresFromHome: 1,
+        timeLabel: a.timing === 'scheduled' ? smartTimeLabel(a.slots![0], at) : 'Now',
+        score: `${sc[otherSide]}-${sc[otherSide === 'A' ? 'B' : 'A']}`,
+      });
+      notify(d, other, 'challenge', `${player.name} wants Badla`, { name: 'invite', id: inv.id }, at, source, series.id, body);
       return { ref: inv.id };
     }
 
@@ -579,19 +677,30 @@ function apply(d: State, a: Exclude<Action, { type: 'TICK' }>, ctx: Ctx): Outcom
         track(d, 'challenge_response', at, source, { playerId: me, seriesId: r.seriesId, roundId: r.id, detail: { response: 'pass' } });
         return;
       }
+      let suggestedOther = false;
       if (r.bookingId) {
         const b = d.bookings[r.bookingId];
-        const i = a.slotIndex ?? (b.proposedSlots.length === 1 ? 0 : -1);
-        if (i < 0 || i >= b.proposedSlots.length) return 'Choose a slot';
-        b.chosenSlot = i;
+        if (a.customSlot) {
+          // "Suggest another time": the challenger's acceptance goes stale and must be renewed.
+          const bad = validSlots(d, [a.customSlot], at, player.timezone);
+          if (bad) return bad;
+          b.proposedSlots.push({ ...a.customSlot });
+          b.chosenSlot = b.proposedSlots.length - 1;
+          suggestedOther = true;
+        } else {
+          const i = a.slotIndex ?? (b.proposedSlots.length === 1 ? 0 : -1);
+          if (i < 0 || i >= b.proposedSlots.length) return 'Choose a slot';
+          b.chosenSlot = i;
+        }
         b.status = 'chosen';
       }
       inv.status = 'accepted';
       r.status = 'filling';
       consent(d, r, me, at, source);
       // A single offered slot is the challenger's explicit consent to that slot.
-      if (r.bookingId && d.bookings[r.bookingId].proposedSlots.length === 1) consent(d, r, d.bookings[r.bookingId].hostId, r.createdAt, 'product');
-      track(d, 'challenge_response', at, source, { playerId: me, seriesId: r.seriesId, roundId: r.id, detail: { response: 'accept', format: r.format, timing: r.timing } });
+      if (r.bookingId && !suggestedOther && d.bookings[r.bookingId].proposedSlots.length === 1) consent(d, r, d.bookings[r.bookingId].hostId, r.createdAt, 'product');
+      if (suggestedOther) notify(d, inv.fromPlayerId, 'counter', `${player.name} suggested another time`, { name: 'round', id: r.id }, at, source, r.seriesId);
+      track(d, 'challenge_response', at, source, { playerId: me, seriesId: r.seriesId, roundId: r.id, detail: { response: suggestedOther ? 'suggest_time' : 'accept', format: r.format, timing: r.timing } });
       advance(d, r, at, source);
       return;
     }
@@ -606,6 +715,7 @@ function apply(d: State, a: Exclude<Action, { type: 'TICK' }>, ctx: Ctx): Outcom
       if (!to || to.accountKind === 'clubOnly') return `${to?.name ?? 'That player'} can't take a seat`;
       if (!player.friendIds.includes(to.id)) return `${to.name} isn't on your friends list`;
       if (isBlockedPair(d, me, to.id)) return 'Badla is off with that player';
+      if (r.clubVisible && !sharedClubId(d, [...series.captainIds, to.id])) return `${to.name} isn't in the club, so this can't be a Grudge Night`;
       const existing = Object.values(d.invites).find((i) => i.roundId === r.id && i.kind === 'partner' && i.toPlayerId === to.id && i.status === 'open');
       if (existing && existing.fromPlayerId === me) return { noop: true, ref: existing.id };
       if (rosterOrInvited(d, r).includes(to.id) || existing) return `${to.name} already has a seat in this round`;
@@ -758,12 +868,20 @@ function apply(d: State, a: Exclude<Action, { type: 'TICK' }>, ctx: Ctx): Outcom
     case 'HOST_GRUDGE_NIGHT': {
       const series = d.series[a.seriesId];
       if (!series || !series.captainIds.includes(me)) return 'Only a captain can host';
-      if (!canHostGrudgeNight(d, series.id)) return 'Grudge Night needs 1-1 after a Doubles round with all four in one club';
+      if (!canHostGrudgeNight(d, series.id)) return 'Grudge Night needs 1-1 and a club both captains share';
       const bad = validSlots(d, a.slots, at, player.timezone);
       if (bad) return bad;
       const last = seriesRounds(d, series).filter((x) => x.status === 'settled').pop()!;
       const r = newRound(d, series, { format: 'doubles', timing: 'scheduled', clubVisible: true, isDecider: true, entryGold: 100 }, at, me);
-      for (const x of liveSeats(d, last)) makeSeat(d, r, x.side, x.seatRole, x.playerId, 'invited');
+      if (last.format === 'doubles' && liveSeats(d, last).length === 4) {
+        for (const x of liveSeats(d, last)) makeSeat(d, r, x.side, x.seatRole, x.playerId, 'invited');
+      } else {
+        // Singles history: each captain brings backup for the four-seat Grudge Night.
+        makeSeat(d, r, 'A', 'captain', series.sides.A, 'invited');
+        makeSeat(d, r, 'B', 'captain', series.sides.B, 'invited');
+        makeSeat(d, r, 'A', 'partner', null, 'open');
+        makeSeat(d, r, 'B', 'partner', null, 'open');
+      }
       r.status = 'filling';
       const b: Booking = { id: nextId(d, 'booking'), roundId: r.id, hostId: me, proposedSlots: a.slots.map((w) => ({ ...w })), chosenSlot: null, confirmations: [], status: 'offered' };
       d.bookings[b.id] = b;

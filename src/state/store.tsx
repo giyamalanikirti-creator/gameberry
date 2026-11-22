@@ -2,8 +2,8 @@ import { ReactNode, createContext, useCallback, useContext, useEffect, useMemo, 
 import { DEMO_START } from '../domain/time';
 import type { PlayerId, Route, State } from '../domain/types';
 import { Action, Result, reduce, reconcile } from './reducer';
-import { Root, SessionState, clear, load, save } from './persistence';
-import { createSeedState } from './seed';
+import { Root, SessionState, UiState, clear, load, save } from './persistence';
+import { createFreshState } from './seed';
 
 export interface Store {
   state: State;
@@ -24,6 +24,10 @@ export interface Store {
   notice: string | null;
   dismissNotice: () => void;
   peek: () => Root;
+  ui: UiState;
+  setUi: (patch: Partial<UiState>) => void;
+  /** Reset to the guided start (before the public match), keeping the chosen mode. */
+  restart: (ui?: Partial<UiState>) => void;
 }
 
 const Ctx = createContext<Store | null>(null);
@@ -36,8 +40,8 @@ export function useStore(): Store {
   return s;
 }
 
-function fresh(): Root {
-  return { version: 1, state: createSeedState(), session: { current: null, unlocked: [], routes: {} }, clockOffset: DEMO_START - Date.now() };
+function fresh(ui: UiState = { mode: 'guided', welcomeSeen: false }): Root {
+  return { version: 2, state: createFreshState(), session: { current: null, unlocked: [], routes: {} }, clockOffset: DEMO_START - Date.now(), ui };
 }
 
 function boot(): { root: Root; notice: string | null } {
@@ -107,7 +111,17 @@ export function StoreProvider({ children, tickMs = 1000 }: { children: ReactNode
   const reset = useCallback(() => {
     clear();
     setNotice(null);
-    commit(fresh());
+    commit(fresh({ ...ref.current.ui, welcomeSeen: true }));
+  }, [commit]);
+
+  const restart = useCallback((patch: Partial<UiState> = {}) => {
+    setNotice(null);
+    commit(fresh({ ...ref.current.ui, welcomeSeen: true, ...patch }));
+  }, [commit]);
+
+  const setUi = useCallback((patch: Partial<UiState>) => {
+    const cur = ref.current;
+    commit({ ...cur, ui: { ...cur.ui, ...patch } });
   }, [commit]);
 
   useEffect(() => {
@@ -126,7 +140,8 @@ export function StoreProvider({ children, tickMs = 1000 }: { children: ReactNode
   const value = useMemo<Store>(() => ({
     state: root.state, now, me, session: root.session, clockOffset: root.clockOffset, dispatch, demo, route, go,
     setClockOffset, replaceState, reset, notice, dismissNotice: () => setNotice(null), peek: () => ref.current,
-  }), [root, now, me, route, dispatch, demo, go, setClockOffset, replaceState, reset, notice]);
+    ui: root.ui, setUi, restart,
+  }), [root, now, me, route, dispatch, demo, go, setClockOffset, replaceState, reset, notice, setUi, restart]);
 
   return (
     <Ctx.Provider value={value}>

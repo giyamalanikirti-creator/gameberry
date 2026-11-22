@@ -32,6 +32,9 @@ export interface Player {
   possessive: 'her' | 'his' | 'their';
   /** Friends a captain may invite as a partner. */
   friendIds: PlayerId[];
+  /** Table-ready reminders on or off (Badla settings). */
+  remindersOff: boolean;
+  level: number;
 }
 
 export interface Club {
@@ -49,6 +52,20 @@ export interface OpeningMatch {
   entryGold: number;
   settledAt: number;
   snapshot: ReplayEvent;
+  /** False until the public Quick match has been played in this demo. */
+  played: boolean;
+}
+
+/** Riya's public Quick match: the scripted game that produces the capture. */
+export interface PublicGame {
+  phase: 'matchmaking' | 'playing' | 'done';
+  tokens: import('../engine/rules').Tokens;
+  turn: 'riya' | 'gunjan';
+  die: number | null;
+  index: number;
+  captured: boolean;
+  log: string[];
+  startedAt: number;
 }
 
 export interface Series {
@@ -201,14 +218,19 @@ export interface Assist {
 export type Route =
   | { name: 'home' }
   | { name: 'opening' }
-  | { name: 'challenge'; seriesId: string | null }
+  | { name: 'challenge'; seriesId: string | null; timing?: 'now' | 'scheduled' }
   | { name: 'invite'; id: string }
   | { name: 'round'; id: string }
   | { name: 'receipt'; roundId: string }
   | { name: 'booking'; id: string }
   | { name: 'club' }
   | { name: 'fixture'; id: string }
-  | { name: 'inbox' };
+  | { name: 'inbox' }
+  | { name: 'public' }
+  | { name: 'booked'; roundId: string }
+  | { name: 'seriesEnd'; seriesId: string }
+  | { name: 'profile' }
+  | { name: 'badla' };
 
 export interface Notification {
   id: string;
@@ -218,6 +240,10 @@ export interface Notification {
   route: Route;
   createdAt: number;
   readAt: number | null;
+  /** Set when the daily cap was reached: it waits in the inbox, delivered next day. */
+  deferredTo: number | null;
+  /** Personalised line for the lock-screen push. */
+  body: string | null;
 }
 
 export type Source = 'product' | 'demo' | 'system';
@@ -235,11 +261,14 @@ export interface AnalyticsEvent {
 }
 
 export type NextFixture = 'guided' | FixtureName | 'random';
+export type Variant = 'A' | 'B' | 'C' | 'D';
 
 export interface Settings {
   sweepBonus: boolean;
   nextFixture: NextFixture;
   autoPlay: boolean;
+  /** Experiment arm: A current result, B instant rematch, C full Badla, D Badla + Smart Fixture. */
+  variant: Variant;
 }
 
 export interface State {
@@ -262,6 +291,7 @@ export interface State {
   receiptViews: string[];
   /** `${roundId}:${playerId}` — partners who saved a seat for the decider (interest only). */
   seatSaves: string[];
+  publicGame: PublicGame | null;
   settings: Settings;
   seq: number;
 }

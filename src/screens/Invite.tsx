@@ -3,13 +3,20 @@ import { formatSlot } from '../domain/time';
 import { seriesScore } from '../state/selectors';
 import { Avatar, Card, Gold, PriceSheet, SeriesScore, Waiting } from '../ui/kit';
 import { Back, Terminal, sentAt, useMe } from './common';
+import { TimePicker } from './Challenge';
+import { suggestSlots } from '../smart/smartFixture';
+import type { PlayerId, TimeWindow } from '../domain/types';
+import { useTarget } from '../ui/shell';
 
 /** Screens 3 and 5: the recipient's own invitation, or a read-only card in anyone else's session. */
 export function InviteScreen({ id }: { id: string }) {
-  const { state, me, now, tz, dispatch, go } = useMe();
+  const { state, me, now, tz, dispatch, go, peek } = useMe();
   const inv = state.invites[id];
   const [slot, setSlot] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [suggest, setSuggest] = useState(false);
+  const acceptT = useTarget('accept-challenge', 'btn btn-ember btn-big');
+  const joinT = useTarget('join-side', 'btn btn-ember btn-big');
   const logged = useRef(false);
   const mine = inv?.toPlayerId === me;
 
@@ -51,12 +58,13 @@ export function InviteScreen({ id }: { id: string }) {
     );
   }
 
-  const respond = (accept: boolean) => {
+  const respond = (accept: boolean, customSlot?: TimeWindow) => {
     const res = inv.kind === 'challenge'
-      ? dispatch({ type: 'RESPOND_CHALLENGE', inviteId: inv.id, accept, slotIndex: booking ? slot : undefined })
+      ? dispatch({ type: 'RESPOND_CHALLENGE', inviteId: inv.id, accept, slotIndex: booking ? slot : undefined, customSlot })
       : dispatch({ type: 'RESPOND_PARTNER', inviteId: inv.id, accept });
     if (!res.accepted) return setError(res.reason ?? 'Could not respond');
-    go(accept ? { name: 'round', id: r.id } : { name: 'home' });
+    const after = peek().state.rounds[r.id];
+    go(!accept ? { name: 'home' } : after.status === 'confirmed' && !after.clubVisible ? { name: 'booked', roundId: r.id } : { name: 'round', id: r.id });
   };
 
   if (inv.kind === 'partner') {
@@ -80,7 +88,7 @@ export function InviteScreen({ id }: { id: string }) {
         <p className="muted small">The gold is only taken when all four seats tap Ready. You can decline and nothing happens.</p>
         <PriceSheet format="doubles" compact />
         {error && <p className="error" role="alert">{error}</p>}
-        <button type="button" className="btn btn-ember btn-big" onClick={() => respond(true)}>Join {from.name}'s side · 100 gold on start</button>
+        <button type="button" {...joinT} onClick={() => respond(true)}>Join {from.name}'s side · 100 gold on start</button>
         <button type="button" className="btn btn-quiet" onClick={() => respond(false)}>Decline</button>
       </div>
     );
@@ -106,8 +114,20 @@ export function InviteScreen({ id }: { id: string }) {
       )}
       <p className="muted small">Passing closes this quietly. The opening result stays exactly as it is.</p>
       {error && <p className="error" role="alert">{error}</p>}
-      <button type="button" className="btn btn-ember btn-big" onClick={() => respond(true)}>Accept · {r.entryGold} gold on start</button>
-      <button type="button" className="btn btn-quiet" onClick={() => respond(false)}>Pass</button>
+      <button type="button" {...acceptT} onClick={() => respond(true)}>Accept · {r.entryGold} gold on start</button>
+      {booking && (
+        <button type="button" className="btn btn-quiet" aria-expanded={suggest} onClick={() => setSuggest((x) => !x)}>Suggest another time</button>
+      )}
+      {booking && suggest && (
+        <div className="stack">
+          {suggestSlots(now, [inv.fromPlayerId, me] as PlayerId[]).slice(0, 3).filter((x) => !booking.proposedSlots.some((p) => p.start === x.slot.start)).slice(0, 2).map((x) => (
+            <button key={x.slot.start} type="button" className="slot" onClick={() => respond(true, x.slot)}>Suggest {formatSlot(x.slot, now, tz)} <span className="tz">IST</span></button>
+          ))}
+          <TimePicker now={now} tz={tz} onPick={(w) => respond(true, w)} />
+          <p className="fine">{from.name} confirms the new time before anything is booked.</p>
+        </div>
+      )}
+      <button type="button" className="link" onClick={() => respond(false)}>Pass</button>
     </div>
   );
 }

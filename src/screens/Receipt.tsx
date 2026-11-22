@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import { canHostGrudgeNight, seatFor, seriesScore, seriesStatus, seriesWinner } from '../state/selectors';
 import { Card, Gold, SeriesScore } from '../ui/kit';
 import { Back, Terminal, useMe } from './common';
+import { useTarget } from '../ui/shell';
+import { Term } from '../ui/Term';
 
 /** Screen 8: four different receipts from one round. Reads only the signed-in player's own. */
 export function Receipt({ roundId }: { roundId: string }) {
@@ -9,6 +11,7 @@ export function Receipt({ roundId }: { roundId: string }) {
   const r = state.rounds[roundId];
   const seat = r ? seatFor(state, r, me) : null;
   const logged = useRef(false);
+  const grudgeT = useTarget('grudge-night', 'btn btn-ember btn-big');
 
   useEffect(() => {
     if (!r || !seat || r.status !== 'settled' || logged.current) return;
@@ -75,14 +78,20 @@ export function Receipt({ roundId }: { roundId: string }) {
 
       {isCaptain && st === 'tied' && (
         <div className="stack">
+          <p className="small">One each. Play the <Term t="decider">decider</Term>:</p>
           {canHostGrudgeNight(state, series.id) && (
-            <button type="button" className="btn btn-ember btn-big" onClick={() => go({ name: 'booking', id: `new:${series.id}` })}>Host Grudge Night</button>
+            <button type="button" {...grudgeT} onClick={() => go({ name: 'booking', id: `new:${series.id}` })}>Make it a Grudge Night</button>
           )}
-          <button type="button" className="btn btn-quiet" onClick={() => go({ name: 'challenge', seriesId: series.id })}>Private decider instead</button>
+          <button type="button" className="btn btn-quiet" onClick={() => go({ name: 'challenge', seriesId: series.id, timing: 'now' })}>Private decider now</button>
+          <button type="button" className="btn btn-quiet" onClick={() => go({ name: 'challenge', seriesId: series.id, timing: 'scheduled' })}>Book the decider</button>
+          {!canHostGrudgeNight(state, series.id) && <p className="fine"><Term t="Grudge Night">Grudge Night</Term> needs a club both captains share.</p>}
           {state.seatSaves.filter((k) => k.startsWith(`${r.id}:`)).map((k) => (
             <p key={k} className="small muted">{state.players[k.split(':')[1] as 'ananya'].name} saved a seat for the decider.</p>
           ))}
         </div>
+      )}
+      {st !== 'tied' && st !== 'open' && (
+        <button type="button" className="btn btn-ember btn-big" onClick={() => go({ name: 'seriesEnd', seriesId: series.id })}>See the series result</button>
       )}
       <button type="button" className="btn btn-quiet" onClick={() => go({ name: 'home' })}>Home</button>
     </div>

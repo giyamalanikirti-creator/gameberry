@@ -1,39 +1,48 @@
-import { useEffect } from 'react';
-import { PLAYER_IDS } from '../state/seed';
-import {
-  currentRound,
-  openInvitesTo,
-  pendingActions,
-  seatFor,
-  seriesStatus,
-  theSeries,
-} from '../state/selectors';
+import { currentRound, openInvitesTo, pendingActions, seatFor, seriesStatus, theSeries, balance } from '../state/selectors';
 import { formatSlot } from '../domain/time';
 import { Avatar, Card, Gold, SeriesScore } from '../ui/kit';
+import { useShell, useTarget } from '../ui/shell';
 import { routeForPending, useMe } from './common';
 
+/** A game-style home: who you are, daily rewards, play buttons, then anything waiting on you. */
 export function Home() {
-  const { state, me, now, go, tz } = useMe();
+  const { state, me, now, go, dispatch, tz } = useMe();
+  const { flash } = useShell();
   const player = state.players[me];
   const series = theSeries(state);
   const pending = pendingActions(state, me, now);
-
-  useEffect(() => {
-    if (player.accountKind === 'clubOnly') go({ name: 'club' });
-  }, [player.accountKind, go]);
-
   const isCaptain = me === state.opening.winnerId || me === state.opening.loserId;
   const round = series ? currentRound(state, series) : null;
+  const quickT = useTarget('quick', 'mode-btn mode-quick');
+
+  const quick = () => {
+    if (me === 'riya' && !state.opening.played) {
+      dispatch({ type: 'PUBLIC_QUICK' });
+      go({ name: 'public' });
+    } else flash(state.opening.played ? 'Your public match is already played in this story.' : 'In this story, Riya plays the public match.');
+  };
 
   return (
     <div className="screen">
-      <header className="hello">
-        <Avatar state={state} id={me} size={44} />
-        <div>
-          <p className="eyebrow">{player.accountKind === 'partner' ? 'Partner account' : 'Lobby'}</p>
-          <h1>Hi, {player.name}</h1>
-        </div>
-      </header>
+      <button type="button" className="player-card" onClick={() => go({ name: 'profile' })} aria-label={`${player.name}, level ${player.level}, ${balance(state, me)} gold. Open profile`}>
+        <Avatar state={state} id={me} size={52} />
+        <span className="pc-main">
+          <strong>{player.name}</strong>
+          <small>Level {player.level} · {player.accountKind === 'clubOnly' ? 'Club member' : player.accountKind === 'partner' ? 'Partner account' : 'Full account'}</small>
+        </span>
+        <Gold amount={balance(state, me)} />
+      </button>
+
+      <div className="rewards" aria-label="Daily rewards">
+        <button type="button" className="reward" onClick={() => flash('Daily rewards are not part of this prototype.')}><span aria-hidden="true">🎁</span> Magic Chest</button>
+        <button type="button" className="reward" onClick={() => flash('Daily rewards are not part of this prototype.')}><span aria-hidden="true">🎲</span> Lucky Dice</button>
+      </div>
+
+      <div className="modes" aria-label="Play">
+        <button type="button" {...quickT} onClick={quick}><strong>Quick</strong><small>2 players · 100 gold</small></button>
+        <button type="button" className="mode-btn" onClick={() => flash('Classic is not part of this prototype.')}><strong>Classic</strong><small>4 players</small></button>
+        <button type="button" className="mode-btn" onClick={() => flash('Private tables are not part of this prototype.')}><strong>Private table</strong><small>Invite friends</small></button>
+      </div>
 
       {pending.length > 0 && (
         <Card tone="ember">
@@ -50,16 +59,11 @@ export function Home() {
         </Card>
       )}
 
-      {isCaptain && !series && (
+      {isCaptain && state.opening.played && !series && (
         <Card>
-          <p className="eyebrow">Opening game · 100 gold · settled</p>
-          <h2 className="card-h">{me === state.opening.loserId ? 'Gunjan caught you one square from home.' : "You're 1-0 up. Go for 2-0"}</h2>
-          <p className="muted">
-            {me === state.opening.winnerId ? 'You won 200 gold back.' : 'You lost 100 gold.'} Either captain can start a Badla series: first to two.
-          </p>
-          <button type="button" className="btn btn-ember" onClick={() => go({ name: 'opening' })}>
-            {me === state.opening.loserId ? 'See the result · Take Badla' : 'See the result · Go for 2-0'}
-          </button>
+          <p className="eyebrow">Last match · Quick · 100 gold</p>
+          <h2 className="card-h">{me === state.opening.loserId ? 'Gunjan sent you home 1 square from the finish.' : "You're 1-0 up. Go for 2-0"}</h2>
+          <button type="button" className="btn btn-ember" onClick={() => go({ name: 'opening' })}>See the result</button>
         </Card>
       )}
 
@@ -73,10 +77,7 @@ export function Home() {
               {round.window ? ` · ${formatSlot(round.window, now, tz)}` : ''}
             </p>
           )}
-          <div className="row">
-            {round && <button type="button" className="btn btn-quiet" onClick={() => go({ name: 'round', id: round.id })}>Open round</button>}
-            {isCaptain && <button type="button" className="btn btn-quiet" onClick={() => go({ name: 'opening' })}>Opening game</button>}
-          </div>
+          <button type="button" className="btn btn-quiet" onClick={() => go({ name: 'badla' })}>Open Badla</button>
         </Card>
       )}
 
@@ -86,14 +87,6 @@ export function Home() {
           <p className="muted">No Badla seat yet. When a friend invites you to their side, it appears here.</p>
         </Card>
       )}
-
-      <Card tone="quiet">
-        <h2 className="card-h">Wallet</h2>
-        <p className="wallet-line">Your balance <Gold amount={state.wallet.filter((e) => e.playerId === me).reduce((a, e) => a + e.amount, 0)} /></p>
-        <p className="fine">Gold is game currency in this demo. Nothing here can be bought.</p>
-      </Card>
-
-      {PLAYER_IDS.length > 0 && <p className="fine center">{state.clubs['club-chai-dice'].name} · {state.clubs['club-chai-dice'].memberIds.length} members</p>}
     </div>
   );
 }

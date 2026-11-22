@@ -4,9 +4,11 @@ import type { ClubFixture, Side } from '../domain/types';
 import { isParticipant, predictionOf, predictionTotals } from '../state/selectors';
 import { Card } from '../ui/kit';
 import { Back, Terminal, useMe } from './common';
+import { useTarget } from '../ui/shell';
 
 export function FixtureCard({ f, full }: { f: ClubFixture; full?: boolean }) {
   const { state, me, now, tz, dispatch, go } = useMe();
+  const pickT = useTarget('pick-side');
   const playing = isParticipant(state, f.roundId, me);
   const pick = predictionOf(state, f.id, me);
   const totals = predictionTotals(state, f.id);
@@ -42,10 +44,10 @@ export function FixtureCard({ f, full }: { f: ClubFixture; full?: boolean }) {
             <p className="pick-h">Pick a side</p>
             <div className="seg" role="group" aria-label="Pick a side">
               {(['B', 'A'] as Side[]).map((s) => (
-                <button key={s} type="button" aria-pressed={false} onClick={() => dispatch({ type: 'PREDICT', fixtureId: f.id, side: s })}>{label(s)}</button>
+                <button key={s} type="button" aria-pressed={false} {...(s === 'A' ? pickT : {})} onClick={() => dispatch({ type: 'PREDICT', fixtureId: f.id, side: s })}>{label(s)}</button>
               ))}
             </div>
-            <p className="fine">Free pick, no gold. Totals stay hidden until the result.</p>
+            <p className="fine">Free pick, no gold. Picks lock at start; totals show after the match.</p>
           </>
         )
       )}
@@ -54,7 +56,7 @@ export function FixtureCard({ f, full }: { f: ClubFixture; full?: boolean }) {
         <>
           <p className="fx-winner">{label(f.winnerSide!)} win the series</p>
           {totals && <p className="small">Club picks: {label('B')} {totals.B} · {label('A')} {totals.A}</p>}
-          {pick && <p className={pick.pickSide === f.winnerSide ? 'ok' : 'muted'}>You picked {label(pick.pickSide)}. {pick.pickSide === f.winnerSide ? 'Called it.' : 'Not this time.'}</p>}
+          {pick && <p className={pick.pickSide === f.winnerSide ? 'ok' : 'muted'}>You picked {label(pick.pickSide)}. {pick.pickSide === f.winnerSide ? `${label(f.winnerSide!)} won.` : 'Not this time.'}</p>}
         </>
       )}
       {(f.status === 'withdrawn' || f.status === 'voided') && (
@@ -80,7 +82,12 @@ export function Club() {
       <p className="eyebrow">Club</p>
       <h1 className="title">{clubs[0]?.name ?? 'No club'}</h1>
       <p className="muted small">{clubs[0]?.memberIds.length ?? 0} members · fixtures appear here once all four players confirm.</p>
-      {fixtures.length === 0 ? <Card tone="quiet"><p className="muted">No fixtures yet.</p></Card> : fixtures.map((f) => <FixtureCard key={f.id} f={f} />)}
+      {fixtures.length === 0 ? (
+        <Card tone="quiet">
+          <p className="eyebrow">Coming up</p>
+          <p>Grudge Night fixtures appear here when four clubmates book a decider. Clubmates can pick a side for free.</p>
+        </Card>
+      ) : fixtures.map((f) => <FixtureCard key={f.id} f={f} />)}
     </div>
   );
 }
@@ -117,9 +124,10 @@ export function Inbox() {
       <ul className="inbox">
         {list.map((n) => (
           <li key={n.id}>
-            <button type="button" className={`inbox-row${n.readAt ? '' : ' unread'}`} onClick={() => { dispatch({ type: 'READ_NOTIFICATION', id: n.id }); go(n.route); }}>
+            <button type="button" className={`inbox-row${n.readAt ? '' : ' unread'}${n.deferredTo && n.deferredTo > now ? ' deferred' : ''}`} onClick={() => { dispatch({ type: 'READ_NOTIFICATION', id: n.id }); go(n.route); }}>
               <strong>{n.title}</strong>
-              <small>{relativeDay(n.createdAt, now, tz)} {formatTime(n.createdAt, tz)}</small>
+              {n.body && <span className="small">{n.body}</span>}
+              <small>{n.deferredTo && n.deferredTo > now ? 'Delivered tomorrow · daily cap of two Badla alerts' : `${relativeDay(n.createdAt, now, tz)} ${formatTime(n.createdAt, tz)}`}</small>
             </button>
           </li>
         ))}

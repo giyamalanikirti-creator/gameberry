@@ -57,10 +57,10 @@ describe('Grudge Night: booking, publication, predictions', () => {
     const fx = Object.keys(before.fixtures)[0];
     expect(predictionTotals(before, fx)).toBeNull();
     const s = story(STEPS);
-    expect(s.fixtures[fx]).toMatchObject({ status: 'settled', winnerSide: 'B' });
+    expect(s.fixtures[fx]).toMatchObject({ status: 'settled', winnerSide: 'A' });
     expect(predictionTotals(s, fx)).toEqual({ A: 1, B: 0 });
     const verdict = s.analytics.find((e) => e.name === 'prediction_verdict')!;
-    expect(verdict).toMatchObject({ playerId: 'dev', detail: { correct: false } });
+    expect(verdict).toMatchObject({ playerId: 'dev', detail: { correct: true } });
   });
 
   it('withdrawal is terminal for that listing; a stale link cannot republish', () => {

@@ -16,6 +16,8 @@ import {
 import { Board, TokenMeta } from '../ui/Board';
 import { Avatar, Card, SeriesScore, SideBadge, Waiting } from '../ui/kit';
 import { Back, Terminal, sentAt, useMe } from './common';
+import { useTarget } from '../ui/shell';
+import { Term } from '../ui/Term';
 
 function sideName(state: ReturnType<typeof useMe>['state'], r: Round, side: Side) {
   return `${state.players[state.series[r.seriesId!].sides[side]].name}'s side`;
@@ -24,6 +26,8 @@ function sideName(state: ReturnType<typeof useMe>['state'], r: Round, side: Side
 function SeatRow({ seat, r, viewerSide, isCaptainView }: { seat: TeamSeat; r: Round; viewerSide: Side | null; isCaptainView: boolean }) {
   const { state, me, tz, dispatch } = useMe();
   const [pick, setPick] = useState(false);
+  const renewT = useTarget('renew', 'btn btn-ember btn-sm');
+  const inviteT = useTarget('invite-partner', 'btn btn-ember btn-sm');
   const series = state.series[r.seriesId!];
   const p = seat.playerId ? state.players[seat.playerId] : null;
   const ownSide = viewerSide === seat.side;
@@ -48,7 +52,7 @@ function SeatRow({ seat, r, viewerSide, isCaptainView }: { seat: TeamSeat; r: Ro
         </small>
       </span>
       {p?.id === me && stale && (
-        <button type="button" className="btn btn-ember btn-sm" onClick={() => dispatch({ type: 'RENEW_TERMS', roundId: r.id })}>Confirm again</button>
+        <button type="button" {...renewT} onClick={() => dispatch({ type: 'RENEW_TERMS', roundId: r.id })}>Terms changed · Confirm again</button>
       )}
       {myCaptainSeat && seat.seatRole === 'partner' && seat.status === 'open' && r.status !== 'active' && (
         pick ? (
@@ -61,7 +65,7 @@ function SeatRow({ seat, r, viewerSide, isCaptainView }: { seat: TeamSeat; r: Ro
             ))}
           </span>
         ) : (
-          <button type="button" className="btn btn-ember btn-sm" onClick={() => setPick(true)}>
+          <button type="button" {...inviteT} onClick={() => setPick(true)}>
             {seat.lastPlayerId ? `Replace ${state.players[seat.lastPlayerId].name}` : 'Invite a partner'}
           </button>
         )
@@ -76,6 +80,8 @@ function SeatRow({ seat, r, viewerSide, isCaptainView }: { seat: TeamSeat; r: Ro
 function Endgame({ r }: { r: Round }) {
   const { state, me, dispatch, go } = useMe();
   const g = r.game!;
+  const rollT = useTarget('roll', 'btn btn-ember btn-big btn-roll');
+  const moveT = useTarget('move', 'btn btn-ember btn-big btn-roll');
   const turnSeat = g.seats[g.turn];
   const myTurn = !g.winnerSide && turnSeat.playerId === me;
   const meta: Partial<Record<Color, TokenMeta>> = {};
@@ -109,6 +115,7 @@ function Endgame({ r }: { r: Round }) {
   const winners = g.winnerSide ? g.seats.filter((s) => s.side === g.winnerSide).map((s) => name(s.playerId)).join(' & ') : '';
   return (
     <div className="endgame">
+      <p className="badla-banner">{r.isDecider ? (r.clubVisible ? 'Grudge Night · decider' : 'Badla decider') : 'Badla match'}</p>
       <div className="hud" aria-live="polite">
         <span className="hud-turn">{g.winnerSide ? `${winners} win` : turnText}</span>
         <span className="hud-score"><SeriesScore state={state} seriesId={r.seriesId!} /></span>
@@ -140,9 +147,9 @@ function Endgame({ r }: { r: Round }) {
           ) : null
         ) : myTurn ? (
           g.die === null ? (
-            <button type="button" className="btn btn-ember btn-big btn-roll" onClick={() => dispatch({ type: 'ROLL', roundId: r.id })}>Roll</button>
+            <button type="button" {...rollT} onClick={() => dispatch({ type: 'ROLL', roundId: r.id })}>Roll</button>
           ) : (
-            <button type="button" className="btn btn-ember btn-big btn-roll" onClick={() => dispatch({ type: 'MOVE', roundId: r.id })}>Move {g.die}</button>
+            <button type="button" {...moveT} onClick={() => dispatch({ type: 'MOVE', roundId: r.id })}>Move {g.die}</button>
           )
         ) : (
           <Waiting who={name(turnSeat.playerId)} what={`Waiting for ${name(turnSeat.playerId)} to ${g.die === null ? 'roll' : 'move'}`} />
@@ -157,6 +164,8 @@ function Endgame({ r }: { r: Round }) {
 export function RoundScreen({ id }: { id: string }) {
   const { state, me, now, tz, dispatch, go } = useMe();
   const [msg, setMsg] = useState<string | null>(null);
+  const readyT = useTarget('ready', 'btn btn-ember btn-big');
+  const rebookT = useTarget('rebook', 'btn btn-ember');
   const r = state.rounds[id];
   if (!r || !r.seriesId) return <Terminal title="Not available" body="This round does not exist." />;
   const series = state.series[r.seriesId];
@@ -193,7 +202,7 @@ export function RoundScreen({ id }: { id: string }) {
           body={`${r.closedReason ?? ''}. ${r.status === 'voided' ? 'Every entry was refunded once.' : 'No gold moved.'} The series score is unchanged.`}
         >
           <SeriesScore state={state} seriesId={series.id} />
-          {canRebook && <button type="button" className="btn btn-ember" onClick={() => { const res = dispatch({ type: 'REBOOK', roundId: r.id }); if (res.ref) go({ name: 'round', id: res.ref }); }}>Rebook once · Play now</button>}
+          {canRebook && <button type="button" {...rebookT} onClick={() => { const res = dispatch({ type: 'REBOOK', roundId: r.id }); if (res.ref) go({ name: 'round', id: res.ref }); }}>Rebook once · Play now</button>}
           {r.rebookedToId && <button type="button" className="btn btn-quiet" onClick={() => go({ name: 'round', id: r.rebookedToId! })}>Go to the rebooked round</button>}
           {isCaptain && !r.rebookedToId && r.status !== 'expired' && seriesStatus(state, series.id) !== 'won' && (
             <button type="button" className="btn btn-quiet" onClick={() => go({ name: 'challenge', seriesId: series.id })}>Send a new challenge</button>
@@ -226,10 +235,10 @@ export function RoundScreen({ id }: { id: string }) {
           <p className="countdown num" aria-live="polite">
             {notReady.length === 0 ? 'All ready' : `Waiting for ${notReady.map((s) => state.players[s.playerId!]?.name ?? 'an empty seat').join(', ')} · ${formatCountdown(r.window.end - now)} left`}
           </p>
-          <p className="muted small">{r.timing === 'now' ? 'Play now: 5-minute join window.' : `Agreed window ${formatSlot(r.window, now, tz)} IST.`} The round starts, and all {need} entries are debited together, when the last seat taps Ready.</p>
+          <p className="muted small">{r.timing === 'now' ? 'Play now: 5-minute join window.' : <>Agreed <Term t="check-in window">check-in window</Term> {formatSlot(r.window, now, tz)} IST.</>} The round starts, and all {need} entries are debited together, when the last seat taps Ready.</p>
           {r.blockedStart && <p className="error" role="alert">{r.blockedStart.reason}</p>}
           {viewerSeat && viewerSeat.status === 'accepted' && !stale && (
-            <button type="button" className="btn btn-ember btn-big" onClick={() => act(dispatch({ type: 'READY', roundId: r.id }))}>Ready · {r.entryGold} gold</button>
+            <button type="button" {...readyT} onClick={() => act(dispatch({ type: 'READY', roundId: r.id }))}>Ready · {r.entryGold} gold</button>
           )}
           {viewerSeat?.status === 'ready' && <p className="ok">You're ready. Your gold is taken only when everyone is.</p>}
         </Card>
@@ -239,6 +248,7 @@ export function RoundScreen({ id }: { id: string }) {
         <Card>
           <p className="time-big">{formatSlot(r.window, now, tz)} <span className="tz">IST</span></p>
           <p className="muted small">Check-in opens at the start of the window. Nothing is charged before every seat is ready.</p>
+          {!r.clubVisible && <button type="button" className="btn btn-quiet" onClick={() => go({ name: 'booked', roundId: r.id })}>Open your fixture ticket</button>}
         </Card>
       )}
 

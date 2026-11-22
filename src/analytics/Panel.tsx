@@ -24,7 +24,7 @@ export function AnalyticsPanel() {
   const snapOf = (Object.keys(SNAPS) as Array<keyof typeof SNAPS>).find((k) => SNAPS[k].participation === inputs.participation && SNAPS[k].extraDays === inputs.extraDays);
 
   return (
-    <aside className="analytics" aria-label="Analytics panel">
+    <div className="analytics" aria-label="Analytics panel">
       <h2 className="an-h">Analytics · product events only</h2>
       <p className="an-claim">The prototype demonstrates a mechanism. The 10% lift is a target to test, not a result.</p>
 
@@ -109,6 +109,6 @@ export function AnalyticsPanel() {
           ))}
         </ol>
       </section>
-    </aside>
+    </div>
   );
 }

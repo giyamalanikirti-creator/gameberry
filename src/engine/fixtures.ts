@@ -53,7 +53,7 @@ export const FIXTURES: Record<FixtureName, Fixture> = {
 
 export const FIXTURE_NAMES = Object.keys(FIXTURES) as FixtureName[];
 
-/** The guided story: round 2 is the comeback, round 3 is the decider. */
+/** The guided story: round 2 is Riya's comeback, round 3 is Team Riya's decider (2-1). */
 export function guidedFixtureFor(roundIndex: number): FixtureName {
-  return roundIndex >= 3 ? 'decider' : 'comeback';
+  return roundIndex >= 3 ? 'decider-riya' : 'comeback';
 }

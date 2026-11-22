@@ -5,7 +5,7 @@
 import type { PlayerId, Route, State } from '../domain/types';
 
 export const STORAGE_KEY = 'badla.v1';
-export const ROOT_VERSION = 1;
+export const ROOT_VERSION = 2;
 
 export interface SessionState {
   current: PlayerId | null;
@@ -14,11 +14,17 @@ export interface SessionState {
   routes: Partial<Record<PlayerId, Route>>;
 }
 
+export interface UiState {
+  mode: 'guided' | 'free';
+  welcomeSeen: boolean;
+}
+
 export interface Root {
   version: number;
   state: State;
   session: SessionState;
   clockOffset: number;
+  ui: UiState;
 }
 
 export type Loaded = { status: 'ok'; root: Root } | { status: 'empty' } | { status: 'reset'; reason: string };
@@ -36,6 +42,8 @@ export function validateRoot(raw: unknown): string | null {
   for (const k of ['wallet', 'notifications', 'analytics', 'receiptViews', 'seatSaves']) if (!Array.isArray(s[k])) return `missing ${k}`;
   if (!isObj(raw.session) || !Array.isArray(raw.session.unlocked) || !isObj(raw.session.routes)) return 'session missing';
   if (typeof raw.clockOffset !== 'number') return 'clock missing';
+  if (!isObj(raw.ui) || (raw.ui.mode !== 'guided' && raw.ui.mode !== 'free')) return 'ui missing';
+  if (!isObj(s.opening) || typeof s.opening.played !== 'boolean') return 'opening missing';
   return null;
 }
 

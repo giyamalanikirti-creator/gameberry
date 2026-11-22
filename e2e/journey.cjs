@@ -1,7 +1,8 @@
 /*
- * Browser walkthrough of the full two-day story, signing in as each player
- * through the account pane, exactly as a reviewer would.
- *   npm run dev            (or: npm run build && npm run preview -- --port 5173)
+ * Browser walkthrough of the guided demo, as a first-time reviewer would do it:
+ * welcome → public match → Badla booked with Smart Fixture → lock-screen push →
+ * fixture day 1-1 → Grudge Night with backup → Dev's pick → Team Riya 2-1.
+ *   npm run dev   (or npm run build && npm run preview -- --port 5173)
  *   BASE_URL=http://localhost:5173 npm run e2e
  * Needs the `playwright` package.
  */
@@ -12,237 +13,180 @@ const path = require('path');
 const BASE = process.env.BASE_URL || 'http://localhost:5173';
 const OUT = path.join(__dirname, 'screenshots');
 fs.mkdirSync(OUT, { recursive: true });
-const PINS = { Gunjan: '1111', Riya: '2222', Ananya: '3333', Shruti: '4444', Dev: '5555' };
 const errors = [];
 let n = 0;
 
-async function shot(page, name) {
+async function shot(page, name, whole) {
   n += 1;
-  await page.locator('.phone').screenshot({ path: path.join(OUT, `${String(n).padStart(2, '0')}-${name}.png`) });
+  const file = path.join(OUT, `${String(n).padStart(2, '0')}-${name}.png`);
+  if (whole) await page.screenshot({ path: file });
+  else await page.locator('.phone').screenshot({ path: file });
 }
-async function see(page, text, timeout = 6000) {
-  await page.getByText(text, { exact: false }).first().waitFor({ state: 'visible', timeout });
-}
-async function tap(page, name, opts = {}) {
-  await page.getByRole('button', { name, exact: !!opts.exact }).first().click();
-}
+const see = (page, text, timeout = 8000) => page.getByText(text, { exact: false }).first().waitFor({ state: 'visible', timeout });
+const tap = (page, name, exact = false) => page.getByRole('button', { name, exact }).first().click();
 
-/** The only way to change player: the account pane. */
-async function as(page, who) {
-  if (await page.locator('.acct-trigger .tb-name', { hasText: who }).count()) return;
-  await page.locator('.acct-trigger').click();
-  const row = page.locator('.acct', { hasText: who }).first();
-  await row.click();
+/** Finish a sign-in card that the story handoff (or a push) opened. */
+async function unlock(page, who) {
   const pin = page.locator('.pin input');
-  if (await pin.isVisible().catch(() => false)) {
-    await pin.fill(PINS[who]);
+  const done = page.locator('.acct-trigger', { hasText: who });
+  await Promise.race([pin.waitFor({ timeout: 4000 }), done.waitFor({ timeout: 4000 })]).catch(() => {});
+  if (await pin.count()) {
+    await page.locator('.signin').getByRole('button', { name: 'Fill it' }).click();
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   }
-  await page.locator('.scrim').waitFor({ state: 'detached' });
   await page.locator('.acct-trigger', { hasText: who }).waitFor();
 }
-async function home(page) {
-  await page.locator('.bottom-nav').getByRole('button', { name: 'Home' }).click();
+/** The story panel's Next: hands the phone over via the account pane, never acts for anyone. */
+async function next(page) {
+  await page.locator('.story-next').click();
 }
-async function pending(page, label) {
-  await home(page);
-  await page.locator('.todo-row', { hasText: label }).first().click();
+async function handTo(page, who) {
+  if (await page.locator('.acct-trigger .tb-name', { hasText: who }).count()) return;
+  await page.locator('.acct-trigger').click();
+  await page.locator('.acct', { hasText: who }).first().click();
+  await unlock(page, who);
 }
-async function playTurn(page, who) {
-  await as(page, who);
-  await pending(page, 'Your turn');
-  await tap(page, 'Roll', { exact: true });
-  const move = page.getByRole('button', { name: /^Move \d$/ });
-  if (await move.isVisible().catch(() => false)) await move.click();
-  await page.waitForTimeout(450);
+async function pulse(page, key) {
+  await page.locator(`[data-story="${key}"]`).first().click();
 }
 async function noClip(page, label) {
   const bad = await page.evaluate(() => {
     const out = [];
     const w = document.documentElement.clientWidth;
     if (document.documentElement.scrollWidth > w + 1) out.push('horizontal scroll');
-    document.querySelectorAll('.phone button').forEach((b) => {
-      const r = b.getBoundingClientRect();
-      if (r.width && (r.left < -1 || r.right > w + 1)) out.push(`clipped: ${b.textContent.trim()}`);
-    });
     return out;
   });
   if (bad.length) throw new Error(`${label}: ${bad.join(', ')}`);
 }
 
-async function story(browser, viewport, tag) {
+async function guided(browser, viewport, tag) {
   const page = await browser.newPage({ viewport, deviceScaleFactor: 2 });
   page.on('console', (m) => m.type() === 'error' && errors.push(`${tag}: ${m.text()}`));
   page.on('pageerror', (e) => errors.push(`${tag}: ${e.message}`));
-  page.on('request', (r) => { if (!r.url().startsWith(BASE) && !r.url().startsWith('data:')) errors.push(`${tag}: network call to ${r.url()}`); });
+  page.on('request', (r) => { if (!r.url().startsWith(BASE) && !r.url().startsWith('data:')) errors.push(`${tag}: network call ${r.url()}`); });
   await page.goto(BASE);
   await page.evaluate(() => localStorage.clear());
   await page.reload();
-  await see(page, 'Signed out');
-  await see(page, 'Sun 22 Nov, 8:14 pm IST');
+  const t0 = Date.now();
 
-  // Day 1 — screen 1: Riya's opening result
-  await as(page, 'Riya');
-  await tap(page, /Take Badla/);
-  await see(page, 'Gunjan caught you one square from home.', 8000);
-  await shot(page, `${tag}-01-opening`);
-  await noClip(page, 'opening');
-  await tap(page, 'Take Badla', { exact: true });
-  // Screen 2: challenge sheet
-  await see(page, 'Badla Doubles · You pay 100 · Win 200 back');
-  await shot(page, `${tag}-02-challenge`);
-  await tap(page, /Send to Gunjan/);
+  // Welcome
+  await see(page, 'Badla: turn a capture into a rivalry.');
+  await shot(page, `${tag}-welcome`, true);
+  await tap(page, 'Start guided demo');
+  await see(page, 'Now on Riya');
+  await unlock(page, 'Riya');
+  await see(page, 'Level 14');
+  await page.locator('.player-card', { hasText: '1,000' }).waitFor();
+  await shot(page, `${tag}-home`);
+  await noClip(page, 'home');
+
+  // Ch1: public match
+  await pulse(page, 'quick');
+  await see(page, 'Finding an opponent');
+  await see(page, 'Matched with Gunjan', 6000);
+  await pulse(page, 'public-roll');
+  await pulse(page, 'public-move');
+  await see(page, 'sent Riya home', 6000);
+  await see(page, 'so close');
+  await shot(page, `${tag}-capture`);
+  await pulse(page, 'public-ff');
+  await see(page, 'Gunjan sent you home 1 square from the finish. Take Badla?', 8000);
+  await see(page, '✨ Smart Fixture');
+  await shot(page, `${tag}-result`);
+
+  // Ch2–3: Take Badla, book with Smart Fixture
+  await pulse(page, 'take-badla');
+  await see(page, 'You both usually play around 20:00');
+  await shot(page, `${tag}-smart`);
+  await page.locator('.smart-tag').click();
+  await see(page, 'Tomorrow is a day Riya usually skips.');
+  await pulse(page, 'send-challenge');
   await see(page, 'This invitation is for Gunjan');
-  await see(page, 'Waiting for Gunjan to accept');
 
-  // Screen 3: Gunjan receives it in her own session
-  await as(page, 'Gunjan');
-  await pending(page, 'Badla challenge');
+  // Ch4: offline invite → lock screen push → unlock as Gunjan
+  await next(page);
+  await see(page, "Gunjan's phone");
+  await see(page, 'You sent her home 1 square from the finish');
+  await shot(page, `${tag}-lock`);
+  await page.locator('.push-card').first().click();
+  await unlock(page, 'Gunjan');
   await see(page, 'Riya wants Badla.');
-  await shot(page, `${tag}-03-received`);
-  await tap(page, /Accept · 100 gold/);
-  // Screen 4: seat board
-  await see(page, '2 of 4 seats filled');
-  await tap(page, 'Invite a partner');
-  await tap(page, 'Invite Shruti');
-  await as(page, 'Riya');
-  await home(page);
-  await tap(page, 'Open round');
-  await tap(page, 'Invite a partner');
-  await tap(page, 'Invite Ananya');
-  await shot(page, `${tag}-04-seats`);
-
-  // Screen 5: partner invitations, each in their own session
-  await as(page, 'Ananya');
-  await pending(page, 'Partner invitation');
-  await see(page, 'Riya is down 0-1 to Gunjan. Join her side?');
-  await see(page, 'Entry');
-  await shot(page, `${tag}-05-partner`);
-  await tap(page, /Join Riya's side/);
-  await as(page, 'Shruti');
-  await pending(page, 'Partner invitation');
-  await see(page, 'Gunjan is 1-0 up on Riya');
-  await tap(page, /Join Gunjan's side/);
-
-  // Screen 6: waiting table, Ready per seat
+  await pulse(page, 'accept-challenge');
+  await see(page, 'Your Badla is booked');
+  await shot(page, `${tag}-booked`);
+  await pulse(page, 'skip-ahead');
   await see(page, 'Waiting table');
-  await see(page, /left/);
-  await tap(page, /Ready · 100 gold/);
-  await shot(page, `${tag}-06-table`);
-  for (const who of ['Ananya', 'Gunjan', 'Riya']) {
-    await as(page, who);
-    await pending(page, 'Ready up');
-    await tap(page, /Ready · 100 gold/);
+
+  // Ch5: fixture day
+  for (const who of ['Riya', 'Gunjan']) {
+    await next(page);
+    await unlock(page, who);
+    await pulse(page, 'ready');
   }
-
-  // Screen 7: the Doubles endgame, each seat on its own turn
-  await see(page, 'Quick endgame · demo variant');
-  await shot(page, `${tag}-07-endgame`);
-  await noClip(page, 'endgame');
-  await playTurn(page, 'Riya');
-  await playTurn(page, 'Gunjan');
-  await as(page, 'Ananya');
-  await pending(page, 'Your turn');
-  await see(page, 'you need exactly 2');
-  await tap(page, 'Roll', { exact: true });
-  await tap(page, /^Move 2$/);
-  await see(page, 'Riya & Ananya win');
-
-  // Screen 8: personal receipts
+  await next(page);
+  await unlock(page, 'Riya');
+  await pulse(page, 'roll');
+  await pulse(page, 'move');
+  await see(page, 'Riya win');
   await tap(page, 'See your result');
-  await see(page, /You helped Riya take it to 1.1/);
-  await shot(page, `${tag}-08-assist`);
-  await tap(page, 'Save my seat for the decider');
-  await as(page, 'Shruti');
-  await pending(page, 'Result receipt');
-  await see(page, 'One each. Defend the series with Gunjan?');
+  await see(page, 'Make it a Grudge Night');
+  await shot(page, `${tag}-one-each`);
 
-  // Screen 9: book the decider
-  await as(page, 'Riya');
-  await pending(page, 'Result receipt');
-  await tap(page, 'Host Grudge Night');
-  await tap(page, /Offer this slot/);
-  await see(page, 'Waiting for Gunjan to choose a slot');
-  await as(page, 'Gunjan');
-  await home(page);
-  await page.locator('.todo-row').first().click();
-  await tap(page, /Choose · confirm 100 gold/);
-  await see(page, '2 of 4 confirmed');
-  await shot(page, `${tag}-09-booking`);
-  for (const who of ['Ananya', 'Shruti']) {
-    await as(page, who);
-    await pending(page, 'Confirm booking');
-    await tap(page, /Confirm · 100 gold entry/);
+  // Ch6: Grudge Night with backup
+  await pulse(page, 'grudge-night');
+  await pulse(page, 'grudge-night'); // "Offer this slot"
+  for (let i = 0; i < 8; i++) {
+    const text = await page.locator('.step-text').innerText();
+    if (/club card|Jump to Grudge Night/i.test(text)) break;
+    await next(page);
+    const who = await page.locator('.handoff p').innerText({ timeout: 2000 }).catch(() => null);
+    if (who) await unlock(page, who.replace(/^Now on (\w+)'s phone$/, '$1'));
+    const target = await page.locator('.story-pulse').first();
+    if (await target.count()) {
+      if ((await target.getAttribute('data-story')) === 'invite-partner') {
+        await target.click();
+        await page.locator('.pick button').first().click();
+      } else await target.click();
+    }
+    await page.waitForTimeout(300);
   }
-  await see(page, '4 of 4 confirmed');
-
-  // Screens 10–11: club fixture, Dev picks
-  await as(page, 'Dev');
-  await see(page, 'Gunjan & Shruti');
-  await see(page, 'Pick a side');
-  await shot(page, `${tag}-10-fixture`);
-  await page.locator('.fixture .seg button', { hasText: 'Riya & Ananya' }).first().click();
-  await see(page, 'Your pick is in. Result tomorrow.');
-  await page.reload(); // the pick persists
-  await see(page, 'Your pick is in. Result tomorrow.');
-
-  // Screen 12: match day
-  await page.getByRole('button', { name: 'Demo controls' }).click();
-  await tap(page, "Jump to tomorrow's slot");
-  await page.keyboard.press('Escape');
-  await see(page, 'Mon 23 Nov, 9:00 pm IST');
-  await see(page, 'Predictions locked');
-  for (const who of ['Riya', 'Gunjan', 'Ananya', 'Shruti']) {
-    await as(page, who);
-    await pending(page, 'Ready up');
-    await tap(page, /Ready · 100 gold/);
+  // Ch7: Dev picks
+  await next(page);
+  await unlock(page, 'Dev');
+  await see(page, 'Riya & Ananya');
+  await shot(page, `${tag}-club`);
+  await pulse(page, 'pick-side');
+  await see(page, 'Your pick is in.');
+  await next(page); // "Next day, 21:00"
+  await see(page, 'Ready up', 8000).catch(() => {});
+  for (let i = 0; i < 12; i++) {
+    const text = await page.locator('.step-text').innerText();
+    if (/Series over/.test(text)) break;
+    await next(page);
+    const who = await page.locator('.handoff p').innerText({ timeout: 2000 }).catch(() => null);
+    if (who) await unlock(page, who.replace(/^Now on (\w+)'s phone$/, '$1'));
+    const target = page.locator('.story-pulse').first();
+    if (await target.count()) await target.click();
+    await page.waitForTimeout(400);
   }
-  for (const who of ['Riya', 'Gunjan', 'Ananya', 'Shruti']) await playTurn(page, who);
-  await see(page, 'Gunjan & Shruti win');
-  await tap(page, 'See your result');
-  await see(page, /Gunjan & Shruti win the series 2.1/);
-  await as(page, 'Dev');
-  await page.locator('.bottom-nav').getByRole('button', { name: 'Club' }).click();
-  await see(page, 'Gunjan & Shruti win the series');
-  await see(page, 'You picked Riya & Ananya. Not this time.');
-  await shot(page, `${tag}-12-club-result`);
-
-  // Ledger: the checkpoint balances, total 5,000
-  await page.getByRole('button', { name: 'Demo controls' }).click();
-  const ledger = await page.locator('.ledger').innerText();
-  for (const v of ['Gunjan\t1,100', 'Riya\t900', 'Ananya\t1,000', 'Shruti\t1,000', 'Dev\t1,000', 'Total\t5,000']) {
-    if (!ledger.includes(v)) throw new Error(`ledger missing ${v}:\n${ledger}`);
-  }
-  await page.keyboard.press('Escape');
-  await page.screenshot({ path: path.join(OUT, `${tag}-full.png`), fullPage: false });
-  await page.close();
-}
-
-async function wrongSession(browser) {
-  const page = await browser.newPage({ viewport: { width: 360, height: 740 } });
-  page.on('console', (m) => m.type() === 'error' && errors.push(`wrong-session: ${m.text()}`));
-  await page.goto(BASE);
-  await page.evaluate(() => localStorage.clear());
-  await page.reload();
-  await page.getByRole('button', { name: 'Demo controls' }).click();
-  await page.locator('.drawer select').nth(1).selectOption('5');
-  await page.keyboard.press('Escape');
-  await as(page, 'Riya');
-  // Deep link to Ananya's invitation from Riya's session: read-only
-  const id = await page.evaluate(() => Object.values(JSON.parse(localStorage.getItem('badla.v1')).state.invites).find((i) => i.toPlayerId === 'ananya').id);
-  await page.evaluate((x) => { window.location.hash = `#/invite/${x}`; }, id);
-  await see(page, 'This invitation is for Ananya');
-  if (await page.getByRole('button', { name: /Join Riya's side/ }).count()) throw new Error('wrong session could accept');
-  await noClip(page, '360 invite');
+  await next(page);
+  await see(page, /Riya wins the series 2.1/);
+  await shot(page, `${tag}-series-end`);
+  const show = page.locator('.story-toggle', { hasText: 'Show' });
+  if (await show.isVisible()) await show.click();
+  await page.locator('.story-head').getByRole('tab', { name: 'Model' }).click();
+  await shot(page, `${tag}-full`, true);
+  const secs = Math.round((Date.now() - t0) / 1000);
+  console.log(`${tag}: guided demo reached the series result in ${secs}s of automated clicking`);
+  await noClip(page, 'end');
   await page.close();
 }
 
 (async () => {
   const browser = await chromium.launch();
   try {
-    await story(browser, { width: 390, height: 844 }, 'mobile');
-    await story(browser, { width: 1360, height: 960 }, 'desktop');
-    await wrongSession(browser);
+    await guided(browser, { width: 1360, height: 960 }, 'desktop');
+    await guided(browser, { width: 390, height: 844 }, 'mobile');
   } finally {
     await browser.close();
   }

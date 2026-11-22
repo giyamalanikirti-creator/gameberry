@@ -31,11 +31,11 @@ describe('series spine: first to two', () => {
     expect(canHostGrudgeNight(s, seriesId(s))).toBe(true);
   });
 
-  it('decider 2-1 closes the series to Gunjan', () => {
+  it('decider 2-1 closes the series to Team Riya', () => {
     const s = story(STEPS);
-    expect(seriesScore(s, seriesId(s))).toEqual({ A: 1, B: 2 });
+    expect(seriesScore(s, seriesId(s))).toEqual({ A: 2, B: 1 });
     expect(seriesStatus(s, seriesId(s))).toBe('won');
-    expect(seriesWinner(s, seriesId(s))).toBe('B');
+    expect(seriesWinner(s, seriesId(s))).toBe('A');
     expect(s.analytics.some((e) => e.name === 'series_closed')).toBe(true);
   });
 
@@ -66,7 +66,7 @@ describe('series spine: first to two', () => {
     expect(no(s, 'riya', { type: 'SEND_CHALLENGE', format: 'singles', timing: 'now' }, T0 + 2 * DAY)).toMatch(/over/);
   });
 
-  it('singles-only history at 1-1: decider offered, Grudge Night not offered', () => {
+  it('singles-only history at 1-1: private decider and Grudge Night (bring backup) both offered', () => {
     let s = reduce(createSeedState(), { type: 'DEMO_SETTINGS', patch: { nextFixture: 'comeback' } }, { at: T0, actor: null, source: 'demo' }).state;
     s = ok(s, 'riya', { type: 'SEND_CHALLENGE', format: 'singles', timing: 'now' }, T0);
     s = ok(s, 'gunjan', { type: 'RESPOND_CHALLENGE', inviteId: openInvite(s, 'gunjan').id, accept: true }, T0 + MINUTE);
@@ -74,7 +74,7 @@ describe('series spine: first to two', () => {
     s = ok(s, 'gunjan', { type: 'READY', roundId: latestRound(s).id }, T0 + MINUTE);
     s = playOut(s, T0 + 2 * MINUTE);
     expect(seriesStatus(s, seriesId(s))).toBe('tied');
-    expect(canHostGrudgeNight(s, seriesId(s))).toBe(false);
+    expect(canHostGrudgeNight(s, seriesId(s))).toBe(true);
     const d = ok(s, 'gunjan', { type: 'SEND_CHALLENGE', format: 'singles', timing: 'now' }, T0 + 3 * MINUTE);
     expect(latestRound(d).isDecider).toBe(true);
     expect(latestRound(d).entryGold).toBe(200); // the stake doubles once, then stays flat

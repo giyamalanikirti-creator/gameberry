@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { PlayerId } from '../domain/types';
+import type { PlayerId, Route } from '../domain/types';
 import { PLAYER_IDS } from '../state/seed';
 import { balance, pendingActions, roleOf } from '../state/selectors';
 import { useStore } from '../state/store';
@@ -8,11 +8,21 @@ import { useSessionControls } from './SessionProvider';
 import { SignInCard } from './SignInCard';
 
 /** The product's account menu and the prototype's only way to change player. */
-export function AccountPane({ open, onClose, highlight }: { open: boolean; onClose: () => void; highlight: PlayerId | null }) {
-  const { state, me, now } = useStore();
+export function AccountPane({ open, onClose, highlight, startWith, afterRoute }: {
+  open: boolean; onClose: () => void; highlight: PlayerId | null; startWith?: PlayerId | null; afterRoute?: Route | null;
+}) {
+  const { state, me, now, go } = useStore();
   const { switchTo, signOut, lockAll, isUnlocked } = useSessionControls();
   const [signingIn, setSigningIn] = useState<PlayerId | null>(null);
   const panel = useRef<HTMLDivElement>(null);
+  const land = () => { if (afterRoute) go(afterRoute); };
+
+  useEffect(() => {
+    if (!open || !startWith || startWith === me) return;
+    if (isUnlocked(startWith)) { switchTo(startWith); land(); onClose(); }
+    else setSigningIn(startWith);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, startWith]);
 
   useEffect(() => {
     if (!open) { setSigningIn(null); return; }
@@ -36,7 +46,7 @@ export function AccountPane({ open, onClose, highlight }: { open: boolean; onClo
 
   const pick = (p: PlayerId) => {
     if (p === me) return;
-    if (isUnlocked(p)) { switchTo(p); onClose(); }
+    if (isUnlocked(p)) { switchTo(p); land(); onClose(); }
     else setSigningIn(p);
   };
 
@@ -44,7 +54,7 @@ export function AccountPane({ open, onClose, highlight }: { open: boolean; onClo
     <div className="scrim" onMouseDown={onClose}>
       <div className="account-pane" role="dialog" aria-modal="true" aria-label="Accounts" ref={panel} onMouseDown={(e) => e.stopPropagation()}>
         {signingIn ? (
-          <SignInCard player={signingIn} onDone={() => { setSigningIn(null); onClose(); }} onBack={() => setSigningIn(null)} />
+          <SignInCard player={signingIn} onDone={() => { setSigningIn(null); land(); onClose(); }} onBack={() => setSigningIn(null)} />
         ) : (
           <>
             <p className="pane-h">Accounts</p>

@@ -18,6 +18,12 @@ export function DemoDrawer() {
   const trigger = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener('open-demo-drawer', onOpen);
+    return () => window.removeEventListener('open-demo-drawer', onOpen);
+  }, []);
+
+  useEffect(() => {
     if (!open) return;
     panel.current?.focus();
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
@@ -69,7 +75,7 @@ export function DemoDrawer() {
             <label className="field">
               Next round
               <select value={state.settings.nextFixture} onChange={(e) => demo({ type: 'DEMO_SETTINGS', patch: { nextFixture: e.target.value as NextFixture } })}>
-                <option value="guided">Guided story (comeback, then decider)</option>
+                <option value="guided">Guided story (Riya wins round 2, Team Riya wins the decider)</option>
                 {FIXTURE_NAMES.map((n) => <option key={n} value={n}>{n} · {FIXTURES[n].label}</option>)}
                 <option value="random">Random dice</option>
               </select>
@@ -107,7 +113,7 @@ export function DemoDrawer() {
           <fieldset>
             <legend>State</legend>
             <label className="field">
-              Jump to scene
+              Jump to scene (Doubles-first path)
               <select defaultValue="" onChange={(e) => {
                 const sc = SCENES.find((x) => x.id === e.target.value);
                 if (!sc) return;

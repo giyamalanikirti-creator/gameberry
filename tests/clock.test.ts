@@ -60,11 +60,13 @@ describe('simulated clock', () => {
     expect(r.window!.end - r.window!.start).toBe(5 * MINUTE);
   });
 
-  it('at most two Badla notifications per player per day', () => {
-    const s = story(20);
+  it('at most two Badla alerts per player per day; the rest wait, delivered tomorrow', () => {
+    const s = story(21);
     const byDay = new Map<string, number>();
-    for (const n of s.notifications) byDay.set(n.to, (byDay.get(n.to) ?? 0) + 1);
+    for (const n of s.notifications) if (n.deferredTo === null) byDay.set(n.to, (byDay.get(n.to) ?? 0) + 1);
     for (const v of byDay.values()) expect(v).toBeLessThanOrEqual(2);
-    expect(s.analytics.some((e) => e.name === 'notification_suppressed')).toBe(true);
+    const deferred = s.notifications.filter((n) => n.deferredTo !== null);
+    expect(deferred.length).toBeGreaterThan(0);
+    expect(deferred.every((n) => n.deferredTo! > n.createdAt)).toBe(true);
   });
 });
