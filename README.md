@@ -11,11 +11,14 @@ npm run dev        # open http://localhost:5173
 
 The page shows **one phone** and a short explanation beside it. Every phone screen has **one yellow button**: tap it to move the story forward. The button beside the phone does the same thing. **Back** and **Restart** are under the explanation. When the story moves to another player, the phone shows "Now on Gunjan's phone" and switches by itself.
 
-## The story (18 steps, about 3 minutes)
+## The story (19 steps, about 3 minutes)
+
+The demo opens on an original loading screen (stage curtain, lights, a bouncing die). The look borrows the game's general palette: purple patterned backdrop, magenta panels with gold borders, gold buttons and a bright four-colour board on a wooden frame. All artwork is original: no Ludo STAR logo, mascots or crown art.
 
 | # | Phone | What happens |
 |---|---|---|
-| 1–4 | Riya | Riya plays a Quick match. Gunjan sends her last token home one square from the finish ("😂 so close"). |
+| 1 | Riya | The app loads. |
+| 2–5 | Riya | Riya plays a Quick match. Gunjan sends her last token home one square from the finish ("😂 so close"). |
 | 5 | Riya | Gunjan wins; Riya loses 100 gold. The **Badla card** offers revenge: first to two wins. |
 | 6 | Riya | **Smart Fixture** suggests tomorrow 20:15, when they both usually play. Riya sends the challenge. |
 | 7–8 | Gunjan | Gunjan's locked phone gets a notification. She opens it and accepts. |

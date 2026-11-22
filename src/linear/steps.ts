@@ -6,7 +6,7 @@
 import type { PlayerId } from '../domain/types';
 
 export type ScreenKind =
-  | 'home' | 'match' | 'result' | 'pickTime' | 'lock' | 'invite' | 'booked' | 'checkin'
+  | 'splash' | 'home' | 'match' | 'result' | 'pickTime' | 'lock' | 'invite' | 'booked' | 'checkin'
   | 'rematch' | 'oneEach' | 'backup' | 'partnerInvite' | 'club' | 'grudge' | 'seriesEnd' | 'clubResult';
 
 export interface Step {
@@ -22,6 +22,9 @@ export interface Step {
 }
 
 export const STEPS: Step[] = [
+  { who: 'riya', n: 0, screen: 'splash', cta: 'Tap to play', chapter: 'Start',
+    what: 'Riya opens the Ludo app, as she does most evenings.',
+    why: 'Badla lives inside the normal game. There is no new app and no new habit to learn.' },
   { who: 'riya', n: 0, screen: 'home', cta: 'Play Quick', chapter: 'The capture',
     what: "You are Riya, with 1,000 gold. You start a normal public Quick match.",
     why: 'Badla starts from an ordinary public match, so it needs no new habit to begin.' },

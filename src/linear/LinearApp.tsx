@@ -62,6 +62,8 @@ function Screen({ step, s, clock, onCta }: { step: Step; s: State; clock: number
   const cta = <button ref={ctaRef} type="button" className="btn btn-ember btn-big lin-cta" onClick={onCta}>{step.cta}</button>;
 
   switch (step.screen) {
+    case 'splash':
+      return <Splash onDone={onCta} label={step.cta} />;
     case 'home':
       return (
         <div className="screen">
@@ -86,7 +88,7 @@ function Screen({ step, s, clock, onCta }: { step: Step; s: State; clock: number
             <span className="pm-p">{captured && <span className="chat-bubble">{CHAT_LINE}</span>}Gunjan <Avatar state={s} id="gunjan" size={28} /></span>
           </div>
           <div className={captured && !reduced ? 'shake' : ''}>
-            <Board tokens={g.tokens} meta={metaFor(s, ['red', 'teal'])} perspective="red" active={['red', 'teal']}
+            <Board tokens={g.tokens} meta={metaFor(s, ['red', 'teal'])} perspective="red"
               label={g.log[g.log.length - 1] ?? 'Match start'} focus={[{ color: 'red', tokenIndex: 3 }]} />
           </div>
           {captured && <p className="sent-home">Sent home!</p>}
@@ -201,7 +203,7 @@ function Screen({ step, s, clock, onCta }: { step: Step; s: State; clock: number
         <div className="screen screen-game">
           <p className="badla-banner">{step.screen === 'grudge' ? 'Grudge Night · decider · 2v2' : 'Badla match'}</p>
           <Score s={s} />
-          <Board tokens={gameTokens(g)} meta={metaFor(s, colors)} perspective="red" active={colors} label="Badla board" />
+          <Board tokens={gameTokens(g)} meta={metaFor(s, colors)} perspective="red" label="Badla board" />
           <ol className="turn-order">
             {g.seats.map((x) => <li key={x.playerId}><Avatar state={s} id={x.playerId as PlayerId} size={22} /><span>{s.players[x.playerId as PlayerId].name}</span><small>{x.pos === 56 ? 'home' : `${56 - x.pos} to go`}</small></li>)}
           </ol>
@@ -291,6 +293,40 @@ function Screen({ step, s, clock, onCta }: { step: Step; s: State; clock: number
       );
     }
   }
+}
+
+/** Original loading screen: curtain, lights, a bouncing die and a progress bar. */
+function Splash({ onDone, label }: { onDone: () => void; label: string }) {
+  const [pct, setPct] = useState(0);
+  const ref = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (pct >= 100) { ref.current?.focus({ preventScroll: true }); return; }
+    const t = setTimeout(() => setPct((p) => Math.min(100, p + 7)), 90);
+    return () => clearTimeout(t);
+  }, [pct]);
+  return (
+    <div className="splash">
+      <div className="splash-lights" aria-hidden="true">{Array.from({ length: 14 }, (_, k) => <span key={k} />)}</div>
+      <div className="splash-sparkles" aria-hidden="true"><span>✦</span><span>★</span><span>✦</span><span>◆</span></div>
+      <h1 className="splash-title"><span className="st-ludo">Ludo</span><span className="st-badla">Badla</span></h1>
+      <svg className="splash-die" viewBox="-12 -12 24 24" aria-hidden="true">
+        <rect x="-10" y="-10" width="20" height="20" rx="5" fill="#fff4e6" stroke="#e9b36a" strokeWidth="1" />
+        {[[-5, -5], [5, -5], [0, 0], [-5, 5], [5, 5]].map(([x, y]) => <circle key={`${x}${y}`} cx={x} cy={y} r="2" fill="#e63a35" />)}
+      </svg>
+      <div className="splash-board" aria-hidden="true"><span className="q g" /><span className="q y" /><span className="q r" /><span className="q b" /></div>
+      <div className="splash-bottom">
+        {pct < 100 ? (
+          <>
+            <p className="splash-loading">Loading ..</p>
+            <div className="splash-bar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${pct}%` }} /><em>{pct}%</em></div>
+          </>
+        ) : (
+          <button ref={ref} type="button" className="btn btn-ember btn-big lin-cta" onClick={onDone}>{label}</button>
+        )}
+        <p className="splash-tag">One capture can start a rivalry</p>
+      </div>
+    </div>
+  );
 }
 
 export function LinearApp() {

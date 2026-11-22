@@ -16,7 +16,7 @@
   --club-grey: #8d86a8;
 
   --seat-red: #e63946;
-  --seat-teal: #2a9d8f;
+  --seat-teal: #22b14c;
   --seat-amber: #f4b400;
   --seat-blue: #3a86ff;
   --b-cell: #fff6e5;
@@ -525,3 +525,100 @@ h1, h2, h3, p { margin: 0; }
   .lin-panel { border-radius: 0; border-left: 0; border-right: 0; }
   .lin-panel .btn-big { display: none; }
 }
+
+
+/* ================= Game-like theme (colours and feel only; all artwork original) ================= */
+:root {
+  --indigo-1: #2a0f3a;
+  --indigo-2: #45165a;
+  --surface: #7a1f6e;
+  --surface-2: #93277f;
+  --gold: #ffcf3f;
+  --ember: #ffb020;
+  --ember-ink: #ffd56a;
+  --ink-2: #f0d6ec;
+  --line: rgba(255, 207, 63, 0.35);
+  --seat-red: #e63a35;
+  --seat-amber: #f7c21b;
+  --seat-blue: #2a7fe0;
+  --b-cell: #ffffff;
+  --b-grid: #3a2a1a;
+}
+body {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 120, 200, 0.18), transparent 55%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.025) 0 14px, transparent 14px 28px),
+    linear-gradient(180deg, #3b1050, #22082e);
+  background-color: #2a0f3a;
+}
+.topbar { background: linear-gradient(180deg, #4a1660, #34104a); border-bottom: 2px solid rgba(255, 207, 63, 0.45); }
+.wordmark { color: var(--gold); text-shadow: 0 2px 0 #b5531a; }
+.lin-stage .phone {
+  border-color: #1a0624;
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.03) 0 12px, transparent 12px 24px),
+    linear-gradient(180deg, #5a1a6e, #3a0f4c);
+}
+.statusbar { background: rgba(20, 4, 30, 0.55); }
+
+/* Magenta panels with gold borders */
+.card, .smart-card, .seat, .player-card, .mode-btn, .lin-panel {
+  background: linear-gradient(180deg, #a0287f, #761c69);
+  border: 3px solid var(--gold);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border-radius: 18px;
+}
+.card-quiet { background: linear-gradient(180deg, #8a2374, #6a185e); }
+.card-ember, .card-gold { background: linear-gradient(180deg, #b52e8c, #7d1d6f); }
+.mode-quick { background: linear-gradient(180deg, #ffe066, #ffb820); color: #3a1200; border-color: #fff1a8; }
+.mode-quick small { color: #5a2a00; }
+.player-card .gold, .gold { color: #ffe066; }
+.lin-panel .why, .why { background: rgba(40, 6, 50, 0.55); }
+.lin-panel { border-radius: 22px; }
+
+/* Buttons: gold primary, blue secondary */
+.btn-ember { background: linear-gradient(180deg, #ffe066, #ffb820); color: #3a1200; border: 2px solid #fff1a8; box-shadow: 0 4px 0 #b5641a; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5); }
+.btn-ember:active:not(:disabled) { box-shadow: 0 1px 0 #b5641a; }
+.btn-quiet { background: linear-gradient(180deg, #3fb6ff, #1c7fd6); border: 2px solid #9fdcff; color: #fff; box-shadow: 0 4px 0 #0f4f8a; }
+.smart-tag { background: rgba(255, 224, 102, 0.2); border-color: var(--gold); color: #ffe066; }
+.confidence { background: rgba(80, 220, 120, 0.25); color: #b8ffcc; }
+.eyebrow { color: #ffd6f4; }
+.lin-score strong, .ss-num { color: #ffe066; }
+.banner-static { background: linear-gradient(180deg, #ffe066, #ffc23a); color: #3a1200; border: 2px solid #fff1a8; }
+.sent-home { color: #ffe066; text-shadow: 0 2px 0 #b5531a; font-size: 26px; }
+.chat-bubble { background: #fff; color: #2a0f3a; border-radius: 14px 14px 14px 2px; }
+
+/* Board: wooden frame, bright quadrants */
+.b-frame { fill: #6b3a1a; stroke: #3d1e0a; stroke-width: 0.12; }
+.b-safe, .b-star { fill: #8a8a8a; }
+.board { filter: drop-shadow(0 6px 0 #3d1e0a); }
+
+/* Original loading screen */
+.splash { position: relative; min-height: 100%; height: 100%; overflow: hidden; display: flex; flex-direction: column; align-items: center; padding: 28px 16px 20px; gap: 10px;
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.18) 0 18px, rgba(255, 255, 255, 0.04) 18px 36px),
+    radial-gradient(ellipse at 50% 35%, #e0418a 0%, #8a1a6e 45%, #3a0a4a 100%); }
+.splash-lights { position: absolute; top: 18px; left: 0; right: 0; display: flex; justify-content: space-around; }
+.splash-lights span { width: 8px; height: 8px; border-radius: 50%; background: #ffe066; box-shadow: 0 0 10px 3px rgba(255, 224, 102, 0.8); animation: twinkle 1.2s ease-in-out infinite alternate; }
+.splash-lights span:nth-child(odd) { animation-delay: 0.6s; }
+@keyframes twinkle { to { opacity: 0.3; } }
+.splash-sparkles span { position: absolute; color: #ffe066; font-size: 26px; text-shadow: 0 0 12px rgba(255, 224, 102, 0.9); }
+.splash-sparkles span:nth-child(1) { top: 90px; left: 30px; }
+.splash-sparkles span:nth-child(2) { top: 140px; right: 34px; font-size: 34px; }
+.splash-sparkles span:nth-child(3) { top: 320px; left: 24px; }
+.splash-sparkles span:nth-child(4) { top: 300px; right: 30px; color: #7cf08a; }
+.splash-title { margin-top: 60px; display: flex; flex-direction: column; align-items: center; line-height: 0.95; font-weight: 900; letter-spacing: 0.02em; }
+.st-ludo { font-size: 64px; background: linear-gradient(180deg, #ffe066, #ff8a1a); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-stroke: 2px #7a1f0a; filter: drop-shadow(0 4px 0 #5a0f3a); }
+.st-badla { font-size: 44px; color: #fff; -webkit-text-stroke: 2px #7a1f6e; filter: drop-shadow(0 3px 0 #3a0a4a); }
+.splash-die { width: 92px; height: 92px; margin-top: 8px; animation: bob 1.4s ease-in-out infinite; filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.4)); }
+@keyframes bob { 50% { transform: translateY(-10px) rotate(-8deg); } }
+.splash-board { width: 180px; height: 120px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 4px; padding: 6px; background: #fff; border-radius: 10px; transform: perspective(300px) rotateX(35deg); box-shadow: 0 12px 0 #6b3a1a; }
+.splash-board .q { border-radius: 4px; }
+.q.g { background: var(--seat-teal); } .q.y { background: var(--seat-amber); } .q.r { background: var(--seat-red); } .q.b { background: var(--seat-blue); }
+.splash-bottom { margin-top: auto; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.splash-loading { font-weight: 900; font-size: 18px; text-shadow: 0 2px 0 #3a0a4a; }
+.splash-bar { position: relative; width: 86%; height: 22px; border-radius: 12px; background: #2a0a36; border: 2px solid #ffd6f4; overflow: hidden; }
+.splash-bar span { display: block; height: 100%; background: repeating-linear-gradient(135deg, #4fdc5a 0 10px, #2fb83c 10px 20px); }
+.splash-bar em { position: absolute; inset: 0; display: grid; place-items: center; font-style: normal; font-weight: 900; font-size: 13px; text-shadow: 0 1px 2px #000; }
+.splash-tag { font-weight: 800; text-align: center; text-shadow: 0 2px 0 #3a0a4a; }
+@media (prefers-reduced-motion: reduce) { .splash-die, .splash-lights span { animation: none; } }
