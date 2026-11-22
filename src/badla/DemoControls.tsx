@@ -101,6 +101,7 @@ export function DemoControls({ props, motion, setMotion, advance, switchViewer, 
       <ul className="bd-events">{state.events.map((event, i) => <li key={i}>{event.day} · {PLAYERS[event.actor].name} · {event.name}</li>)}</ul>
     </details>
     <section>
+      <a href="./">Open Badla Rivals</a>
       <a href="?classic=1">Open original singles demo</a>
       {!confirmReset ? <button onClick={() => setConfirmReset(true)}>Reset demo</button>
         : <button className="bd-primary" onClick={reset}>Confirm reset</button>}

@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "node e2e/journey.cjs",
-    "e2e:series": "node e2e/series.cjs"
+    "e2e:series": "node e2e/series.cjs",
+    "e2e:rivals": "node e2e/rivals.cjs"
   },
   "dependencies": {
     "react": "^19.3.1",

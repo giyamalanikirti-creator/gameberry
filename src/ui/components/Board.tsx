@@ -41,6 +41,7 @@ export interface BoardProps {
   impact?: { color: BoardColor; pos: number } | null;
   movable?: { color: BoardColor; tokens: number[]; steps: number; onMove: (i: number) => void } | null;
   animate?: boolean;
+  returning?: { color: BoardColor; tokenIndex: number };
   compact?: boolean;
 }
 
@@ -121,7 +122,7 @@ function TokenShape({ color, r }: { color: BoardColor; r: number }) {
   );
 }
 
-export function Board({ tokens, perspective, names, label, focus = [], impact, movable, animate = true, compact }: BoardProps) {
+export function Board({ tokens, perspective, names, label, focus = [], impact, movable, returning, animate = true, compact }: BoardProps) {
   const flip = perspective === 'yellow';
   const placed = useMemo(() => placeTokens(tokens), [tokens]);
 
@@ -211,7 +212,7 @@ export function Board({ tokens, perspective, names, label, focus = [], impact, m
           const focused = isFocus(t.color, t.index);
           const name = names[t.color] ?? t.color;
           const common = {
-            className: `token${canMove ? ' token-movable' : ''}${focused ? ' token-focus' : ''}`,
+            className: `token${canMove ? ' token-movable' : ''}${focused ? ' token-focus' : ''}${returning?.color === t.color && returning.tokenIndex === t.index ? ' token-returning' : ''}`,
             style: { transform: `translate(${t.x}px, ${t.y}px)` },
           };
           const body = (
