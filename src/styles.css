@@ -647,3 +647,6 @@ body {
 .splash-bar em { position: absolute; inset: 0; display: grid; place-items: center; font-style: normal; font-weight: 900; font-size: 13px; text-shadow: 0 1px 2px #000; }
 .splash-tag { font-weight: 800; font-size: 15px; text-align: center; text-shadow: 0 2px 0 #3a0a4a; padding: 0 12px; }
 @media (prefers-reduced-motion: reduce) { .sp-die, .splash-lights span { animation: none; } }
+
+.dev-reward { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-weight: 900; font-size: 17px; color: #fff; background: linear-gradient(180deg, #ffb820, #e8860e); border: 2px solid #fff1a8; border-radius: 12px; padding: 8px 12px; text-shadow: 0 1px 0 #7a3a0a; }
+.dev-reward .gold { color: #fff; }

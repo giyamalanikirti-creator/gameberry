@@ -77,6 +77,6 @@ export const STEPS: Step[] = [
     what: 'Riya and Ananya win the decider. Riya wins the series 2-1.',
     why: 'Lift = participants × extra days ÷ 7.5. In the base case that is about +10% DAU, a target to test.' },
   { who: 'dev', n: 29, screen: 'clubResult', cta: 'Start again', chapter: 'Series end',
-    what: 'Dev picked right. Every gold balance has settled, and the total is still 5,000.',
+    what: 'Dev bet right on Riya and Ananya, and they won, so he gets 100 gold coins.',
     why: 'One capture brought five players back on a second day.' },
 ];

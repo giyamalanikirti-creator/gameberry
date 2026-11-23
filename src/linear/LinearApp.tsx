@@ -268,6 +268,7 @@ function Screen({ step, s, clock, onCta }: { step: Step; s: State; clock: number
               <>
                 <p className="fx-winner">Riya & Ananya win the series</p>
                 <p className="ok">You picked Riya & Ananya. Riya & Ananya won.</p>
+                <p className="dev-reward">Right pick! You win <Gold amount={100} /> gold coins · balance <Gold amount={balance(s, 'dev') + 100} /></p>
               </>
             ) : <p className="pick-h">Pick a side · free, no gold</p>}
           </div>

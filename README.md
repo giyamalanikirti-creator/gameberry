@@ -26,7 +26,7 @@ The demo opens on a "Ludo Star · Badla" loading screen modelled on the game's o
 | 10–12 | Riya | Next evening: check in, play, Riya wins. The series is **1-1**. |
 | 13–14 | Riya, Ananya | Riya makes the decider a **Grudge Night** (2v2) and invites Ananya; Gunjan brings Shruti. |
 | 15 | Dev | The match appears in the club. Dev, who is not playing, picks a side for free. |
-| 16–18 | Riya, Dev | Grudge Night is played. **Riya wins the series 2-1**, and Dev's pick was right. |
+| 16–18 | Riya, Dev | Grudge Night is played. **Riya wins the series 2-1**, and Dev's pick was right, so he wins 100 gold coins. |
 
 Each step's explanation includes a **Why it matters** line that ties it to the daily-active-user model (1.22, 0.50, 0.30 and 0.23 extra active days; about +10% DAU in the base case).
 
@@ -39,7 +39,7 @@ The demo screens are drawn from a tested game engine, so the board, gold and sco
 - `src/state`, `src/engine`, `src/smart`: the rules engine, Ludo board and dice, gold ledger, and the deterministic Smart Fixture suggestions.
 - `src/demo/guided.ts`: the scripted story the engine plays.
 
-Gold is conserved: the five players always hold 5,000 in total. Final balances: Riya 1,200, Gunjan 800, Ananya 1,100, Shruti 900, Dev 1,000.
+Between the players, gold is conserved: entries and payouts always total 5,000. The one addition is Dev's 100-coin reward for a correct pick, paid by the game, which brings the total to 5,100. Final balances: Riya 1,200, Gunjan 800, Ananya 1,100, Shruti 900, Dev 1,100.
 
 ```bash
 npm test           # 76 engine tests
