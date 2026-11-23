@@ -113,7 +113,7 @@ export function inviteLine(c: InviteCtx): string {
 }
 
 export function smartTimeLabel(slot: TimeWindow, now: number): string {
-  const hhmm = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(slot.start);
+  const hhmm = new Intl.DateTimeFormat('en-IN', { timeZone: TZ, hour: 'numeric', minute: '2-digit', hour12: true }).format(slot.start).replace(/\s?([ap])\.?m\.?/i, (_, x: string) => ` ${x.toLowerCase()}m`);
   const sameDay = zonedParts(slot.start, TZ).day === zonedParts(now, TZ).day;
   const isTomorrow = slot.start - now < 2 * 24 * 60 * MINUTE && !sameDay;
   return `${sameDay ? 'Tonight' : isTomorrow ? 'Tomorrow' : weekday(slot.start)} ${hhmm}`;

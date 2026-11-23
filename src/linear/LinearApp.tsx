@@ -123,7 +123,7 @@ function Screen({ step, s, clock, onCta }: { step: Step; s: State; clock: number
           </div>
           <div className="smart-card">
             <span className="smart-tag">✨ Smart Fixture</span>
-            <p className="smart-line">You both usually play around 20:00. Book {smartTimeLabel(slot, s.opening.settledAt)}?</p>
+            <p className="smart-line">You both usually play around 8 pm. Book {smartTimeLabel(slot, s.opening.settledAt)}?</p>
             <span className="confidence">High chance you both show up</span>
             {cta}
           </div>
@@ -141,7 +141,7 @@ function Screen({ step, s, clock, onCta }: { step: Step; s: State; clock: number
             <button type="button" className="push-card" onClick={onCta}>
               <span className="push-app">LUDO · Badla · now</span>
               <strong>{n?.title ?? 'Riya wants Badla'}</strong>
-              <span>{n?.body ?? inviteLine({ from: 'Riya', to: 'Gunjan', squaresFromHome: 1, timeLabel: 'Tomorrow 20:15', score: '1-0' })}</span>
+              <span>{n?.body ?? inviteLine({ from: 'Riya', to: 'Gunjan', squaresFromHome: 1, timeLabel: 'Tomorrow 8:15 pm', score: '1-0' })}</span>
             </button>
           </div>
           <p className="lock-hint">Tap the notification</p>
@@ -230,12 +230,12 @@ function Screen({ step, s, clock, onCta }: { step: Step; s: State; clock: number
     case 'backup':
       return (
         <div className="screen">
-          <p className="eyebrow">Grudge Night · tomorrow 21:00 · 100 gold a seat</p>
+          <p className="eyebrow">Grudge Night · tomorrow 9:00 pm · 100 gold a seat</p>
           <h1 className="title">Bring backup</h1>
           <ul className="seats">
             <li className="seat seat-ready"><Avatar state={s} id="riya" size={30} /><span className="seat-main"><strong>Riya (you)</strong><small>Captain</small></span></li>
             <li className="seat"><span className="seat-empty">+</span><span className="seat-main"><strong>Your partner</strong><small>Ananya, a friend from your club</small></span></li>
-            <li className="seat seat-ready"><Avatar state={s} id="gunjan" size={30} /><span className="seat-main"><strong>Gunjan</strong><small>Captain · chose 21:00</small></span></li>
+            <li className="seat seat-ready"><Avatar state={s} id="gunjan" size={30} /><span className="seat-main"><strong>Gunjan</strong><small>Captain · chose 9:00 pm</small></span></li>
             <li className="seat"><Avatar state={s} id="shruti" size={30} /><span className="seat-main"><strong>Shruti</strong><small>Invited by Gunjan</small></span></li>
           </ul>
           {cta}
@@ -248,7 +248,7 @@ function Screen({ step, s, clock, onCta }: { step: Step; s: State; clock: number
           <p className="eyebrow">Partner invitation</p>
           <div className="invite-from"><Avatar state={s} id="riya" size={48} /><h1 className="title">Riya and Gunjan are 1‑1. Join Riya's side?</h1></div>
           <p className="big-price">Entry <Gold amount={100} />. Win <Gold amount={200} /> back.</p>
-          <p className="muted small">Grudge Night · tomorrow 21:00 · listed in Chai & Dice Club</p>
+          <p className="muted small">Grudge Night · tomorrow 9:00 pm · listed in Chai & Dice Club</p>
           {cta}
           <p className="fine center">Or: Decline</p>
         </div>
@@ -262,7 +262,7 @@ function Screen({ step, s, clock, onCta }: { step: Step; s: State; clock: number
         <div className="screen">
           <p className="eyebrow">Club · Chai & Dice Club</p>
           <div className={`card ${settled ? 'card-gold' : 'card-ember'} fixture`}>
-            <p className="eyebrow">Grudge Night · {settled ? 'Result' : 'Tomorrow 21:00'}</p>
+            <p className="eyebrow">Grudge Night · {settled ? 'Result' : 'Tomorrow 9:00 pm'}</p>
             <h2 className="fx-teams">Riya & Ananya <span className="vs">vs</span> Gunjan & Shruti</h2>
             <p className="fx-score">Captains 1-1 · decider</p>
             {settled ? (
@@ -348,7 +348,13 @@ export function LinearApp() {
   const step = STEPS[i];
   const { state: s, at } = useStory(step.n);
   const r = latestRound(s);
-  const clock = step.atWindow && r?.window ? r.window.start : at;
+  const base = step.atWindow && r?.window ? r.window.start : at;
+  // The story clock runs live from each screen's moment in the story.
+  const [entered, setEntered] = useState(() => Date.now());
+  const [, tick] = useState(0);
+  useEffect(() => { setEntered(Date.now()); }, [i]);
+  useEffect(() => { const t = setInterval(() => tick((x) => x + 1), 1000); return () => clearInterval(t); }, []);
+  const clock = base + Math.max(0, Date.now() - entered);
 
   useEffect(() => {
     try { localStorage.setItem(KEY, String(i)); } catch { /* storage blocked: stays in memory */ }

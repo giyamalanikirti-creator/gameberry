@@ -47,4 +47,4 @@ npm run build      # production build in dist/
 npm run e2e        # clicks through all 18 steps in a browser (needs `npm run dev` running and playwright)
 ```
 
-**Known difference from the spec:** the spec says 21:15, but its seeded play-hour data peaks at 20:00, so Smart Fixture suggests 20:15.
+**Known difference from the spec:** the spec says 9:15 pm (21:15), but its seeded play-hour data peaks at 20:00, so Smart Fixture suggests 8:15 pm.

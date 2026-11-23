@@ -28,7 +28,7 @@ describe('Smart Fixture (deterministic mock)', () => {
   });
 
   it('fills the invite line from match facts', () => {
-    expect(inviteLine({ from: 'Riya', to: 'Gunjan', squaresFromHome: 1, timeLabel: 'Tomorrow 20:15', score: '1-0' }))
-      .toBe('Riya wants Badla. You sent her home 1 square from the finish. Tomorrow 20:15?');
+    expect(inviteLine({ from: 'Riya', to: 'Gunjan', squaresFromHome: 1, timeLabel: 'Tomorrow 8:15 pm', score: '1-0' }))
+      .toBe('Riya wants Badla. You sent her home 1 square from the finish. Tomorrow 8:15 pm?');
   });
 });
