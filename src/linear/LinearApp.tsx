@@ -12,6 +12,7 @@ import { Board, TokenMeta } from '../ui/Board';
 import { Avatar, Gold } from '../ui/kit';
 import { useReducedMotion } from '../ui/motion';
 import { STEPS, Step } from './steps';
+import splashUrl from '../assets/ludo-star-splash.jpg';
 
 const KEY = 'badla.linear.v1';
 const TZ = 'Asia/Kolkata';
@@ -296,19 +297,7 @@ function Screen({ step, s, clock, onCta }: { step: Step; s: State; clock: number
   }
 }
 
-const LETTER_COLORS = ['#ff4b4b', '#ffd23f', '#38d36a', '#3fa8ff'];
-
-function Die({ x, y, size, rot, pips }: { x: string; y: string; size: number; rot: number; pips: number[][] }) {
-  return (
-    <svg className="sp-die" style={{ left: x, top: y, width: size, height: size, transform: `rotate(${rot}deg)` }} viewBox="-12 -12 24 24" aria-hidden="true">
-      <rect x="-10" y="-10" width="20" height="20" rx="5" fill="#ffe9d6" stroke="#f0a86a" strokeWidth="1.2" />
-      <rect x="-10" y="-10" width="20" height="8" rx="4" fill="#fff6ee" opacity="0.7" />
-      {pips.map(([px, py]) => <circle key={`${px}${py}`} cx={px} cy={py} r="2" fill="#e8463c" />)}
-    </svg>
-  );
-}
-
-/** Loading screen in the spirit of the game's own: stage, lights, dice, board, coins. Artwork is original. */
+/** The game's loading screen (from the provided screenshot), with a Badla plaque and a live loading bar. */
 function Splash({ onDone, label }: { onDone: () => void; label: string }) {
   const [pct, setPct] = useState(0);
   const ref = useRef<HTMLButtonElement>(null);
@@ -318,35 +307,8 @@ function Splash({ onDone, label }: { onDone: () => void; label: string }) {
     return () => clearTimeout(t);
   }, [pct]);
   return (
-    <div className="splash">
-      <div className="sp-drape sp-drape-l" aria-hidden="true" />
-      <div className="sp-drape sp-drape-r" aria-hidden="true" />
-      <div className="sp-swag" aria-hidden="true" />
-      <div className="sp-bunting" aria-hidden="true">{Array.from({ length: 9 }, (_, k) => <span key={k} />)}</div>
-      <div className="splash-lights" aria-hidden="true">{Array.from({ length: 16 }, (_, k) => <span key={k} />)}</div>
-      <div className="sp-starpanel" aria-hidden="true" />
-      <div className="splash-sparkles" aria-hidden="true"><span>★</span><span>✦</span><span>★</span><span>◆</span><span>✦</span></div>
-
-      <h1 className="splash-title">
-        <span className="sp-ludo">{'LUDO'.split('').map((ch, k) => <span key={k} style={{ color: LETTER_COLORS[k] }}>{ch}</span>)}</span>
-        <span className="sp-star">STAR</span>
-        <span className="sp-badla">BADLA</span>
-      </h1>
-
-      <Die x="50%" y="300px" size={96} rot={-12} pips={[[-5, -5], [5, -5], [0, 0], [-5, 5], [5, 5]]} />
-      <Die x="6%" y="400px" size={58} rot={18} pips={[[-5, -5], [5, 5], [0, 0]]} />
-      <Die x="76%" y="410px" size={54} rot={-20} pips={[[-5, -5], [5, -5], [-5, 5], [5, 5]]} />
-      <span className="sp-heart" aria-hidden="true">❤</span>
-
-      <div className="sp-table" aria-hidden="true">
-        <div className="splash-board">
-          <span className="q g" /><span className="q y" /><span className="q r" /><span className="q b" />
-          <i className="tok t1" /><i className="tok t2" /><i className="tok t3" /><i className="tok t4" />
-        </div>
-        <div className="sp-coins">{Array.from({ length: 18 }, (_, k) => <span key={k} style={{ left: `${(k * 53) % 100}%`, bottom: `${(k % 4) * 9}px` }} />)}</div>
-        <span className="sp-gem g1" /><span className="sp-gem g2" />
-      </div>
-
+    <div className="splash-img" style={{ backgroundImage: `url(${splashUrl})` }}>
+      <span className="sp-badla-plaque">BADLA</span>
       <div className="splash-bottom">
         {pct < 100 ? (
           <>
@@ -362,7 +324,25 @@ function Splash({ onDone, label }: { onDone: () => void; label: string }) {
   );
 }
 
+/** Scale a true-proportion phone (390 × 844 screen) to fit the window, like a device mockup. */
+function useDeviceScale() {
+  const calc = () => {
+    if (typeof window === 'undefined') return { k: 1, bare: false };
+    const bare = window.innerWidth < 500;
+    const k = Math.min(1, (window.innerHeight - 108) / 868, (window.innerWidth - 32) / 414);
+    return { k: Math.max(0.5, k), bare };
+  };
+  const [v, setV] = useState(calc);
+  useEffect(() => {
+    const on = () => setV(calc());
+    window.addEventListener('resize', on);
+    return () => window.removeEventListener('resize', on);
+  }, []);
+  return v;
+}
+
 export function LinearApp() {
+  const { k, bare } = useDeviceScale();
   const [i, setI] = useState(loadStep);
   const [handoff, setHandoff] = useState<PlayerId | null>(null);
   const step = STEPS[i];
@@ -391,12 +371,22 @@ export function LinearApp() {
         <div className="lin-who"><Avatar state={s} id={step.who} size={28} /> {s.players[step.who].name}'s phone</div>
       </header>
       <main className="lin-stage">
-        <div className="phone">
-          <div className="statusbar" aria-hidden="true"><span className="num">{formatTime(clock, TZ)}</span><span>{s.players[step.who].name} · ●●●● LTE</span></div>
-          <div className="phone-body" key={i}>
-            <Screen step={step} s={s} clock={clock} onCta={() => go(i + 1)} />
+        <div className={`device-wrap${bare ? ' bare' : ''}`} style={bare ? undefined : { width: 414 * k, height: 868 * k }}>
+          <div className="device" style={bare ? undefined : { transform: `scale(${k})` }}>
+            <div className={`phone${step.screen === 'splash' ? ' phone-splash' : ''}`}>
+              <div className="statusbar" aria-hidden="true">
+                <span className="num sb-time">{formatTime(clock, TZ).replace(/\s?[ap]m$/, '')}</span>
+                <span className="island" />
+                <span className="sb-icons"><i className="sig" /><i className="wifi" /><i className="batt" /></span>
+              </div>
+              <div className="phone-body" key={i}>
+                <Screen step={step} s={s} clock={clock} onCta={() => go(i + 1)} />
+              </div>
+              <span className="home-bar" aria-hidden="true" />
+              {handoff && <div className="handoff" role="status"><Avatar state={s} id={handoff} size={64} /><p>Now on {s.players[handoff].name}'s phone</p></div>}
+            </div>
+            <span className="btn-side power" aria-hidden="true" /><span className="btn-side vol1" aria-hidden="true" /><span className="btn-side vol2" aria-hidden="true" />
           </div>
-          {handoff && <div className="handoff" role="status"><Avatar state={s} id={handoff} size={64} /><p>Now on {s.players[handoff].name}'s phone</p></div>}
         </div>
         <aside className="lin-panel" aria-live="polite">
           <p className="eyebrow">Step {i + 1} of {STEPS.length} · {step.chapter}</p>
